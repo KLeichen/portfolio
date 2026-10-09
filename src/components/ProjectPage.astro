@@ -1,0 +1,64 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import { t, homePath, type Lang } from '../i18n/ui';
+
+interface Props { entry: CollectionEntry<'projects'> }
+const { entry } = Astro.props;
+const p = entry.data;
+const lang = p.lang as Lang;
+const { Content } = await render(entry);
+---
+<article class="container project">
+  <a class="back" href={homePath(lang) + '#projects'}>{t(lang, 'project.back')}</a>
+  <h1>{p.title}</h1>
+  <p class="summary">{p.summary}</p>
+
+  {p.highlights.length > 0 && (
+    <div class="highlights">
+      {p.highlights.map((h) => <div class="card hl"><strong>{h.value}</strong><span>{h.label}</span></div>)}
+    </div>
+  )}
+
+  <div class="meta">
+    <div class="chips">{p.tools.map((tool) => <span class="chip">{tool}</span>)}</div>
+    <div class="links">
+      {p.github && <a class="btn btn-ghost" href={p.github} target="_blank" rel="noopener">{t(lang, 'project.code')}</a>}
+      {p.report && <a class="btn btn-ghost" href={p.report} target="_blank" rel="noopener">{t(lang, 'project.report')}</a>}
+    </div>
+  </div>
+
+  <div class="content"><Content /></div>
+
+  {p.embed && (
+    <div class="embed">
+      <h2>{t(lang, 'project.tool')}</h2>
+      <iframe src={p.embed} title={p.title} loading="lazy"></iframe>
+    </div>
+  )}
+
+  {p.simulated && <p class="note">{t(lang, 'project.simulated')}</p>}
+</article>
+
+<style>
+  .project { padding-top: 48px; padding-bottom: 96px; max-width: 980px; }
+  .back { color: var(--muted); font-weight: 500; }
+  .back:hover { color: var(--accent); }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.2rem); margin: 24px 0 16px; }
+  .summary { color: var(--muted); font-size: 1.2rem; max-width: 40em; margin: 0 0 32px; }
+  .highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .hl { padding: 20px; }
+  .hl strong { display: block; color: var(--accent); font-size: 1.8rem; }
+  .hl span { color: var(--muted); font-size: .92rem; }
+  .meta { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .links { display: flex; gap: 12px; flex-wrap: wrap; }
+  .content { font-size: 1.08rem; }
+  .content :global(h2) { font-size: 1.5rem; margin: 40px 0 12px; }
+  .content :global(p), .content :global(li) { color: #c5d1db; }
+  .content :global(img) { border-radius: var(--radius); background: #fff; margin: 24px 0; border: 1px solid var(--border); }
+  .content :global(strong) { color: var(--text); }
+  .embed h2 { font-size: 1.5rem; margin: 48px 0 16px; }
+  .embed iframe { width: 100%; height: 820px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+  .note { margin-top: 48px; color: var(--muted); font-size: .9rem; font-style: italic; }
+</style>

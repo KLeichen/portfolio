@@ -1,0 +1,18 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ProjectPage from '../../components/ProjectPage.astro';
+import { projectPath } from '../../i18n/ui';
+
+export async function getStaticPaths() {
+  const all = await getCollection('projects');
+  return all.filter((p) => p.data.lang === 'es').map((entry) => ({
+    params: { slug: entry.data.page },
+    props: { entry, hasAlt: all.some((o) => o.data.lang === 'en' && o.data.page === entry.data.page) },
+  }));
+}
+const { entry, hasAlt } = Astro.props;
+---
+<Base lang="es" title={`${entry.data.title} · Kevin Leichen`} description={entry.data.summary} altHref={hasAlt ? projectPath('en', entry.data.page) : '/en/'}>
+  <ProjectPage entry={entry} />
+</Base>

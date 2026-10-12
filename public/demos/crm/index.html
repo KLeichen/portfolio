@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="logo" id="logo"></span><div><strong id="brandName"></strong><small id="companyName"></small></div></div>
+      <nav id="nav"></nav>
+      <div class="side-foot">
+        <div class="lang" role="group" aria-label="Language"><button data-lang="es">ES</button><button data-lang="en">EN</button></div>
+        <button class="link-btn" id="resetBtn"></button>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu"></button>
+        <div class="search"><span class="ic" data-ic="search"></span><input id="globalSearch" autocomplete="off" /><div class="search-results" id="searchResults"></div></div>
+        <button class="btn btn-primary" id="quickAdd"></button>
+        <div class="me"><span class="avatar" id="meAvatar"></span><div><strong id="meName"></strong><small id="meRole"></small></div></div>
+      </header>
+      <main id="view" class="view"></main>
+    </div>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer"></aside>
+  <div class="modal" id="modal"><div class="modal-card" id="modalCard"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

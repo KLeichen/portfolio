@@ -1,41 +1,59 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CRM</title>
+  <!-- Files load relative to this page, so /demos/crm must become /demos/crm/ -->
+  <script>if (!/(\/|\.html)$/.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);</script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234fd1c5'/%3E%3Cpath d='M10 22V10l12 12V10' stroke='%230d2b29' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand"><span class="logo" id="logo"></span><div><strong id="brandName"></strong><small id="companyName"></small></div></div>
-      <nav id="nav"></nav>
-      <div class="side-foot">
-        <div class="lang" role="group" aria-label="Language"><button data-lang="es">ES</button><button data-lang="en">EN</button></div>
-        <button class="link-btn" id="resetBtn"></button>
+  <header class="hdr">
+    <div class="hdr-in">
+      <a class="brand" href="#dashboard"><span class="logo" id="logo"></span><span class="brand-txt"><strong id="brandName"></strong><small id="companyName"></small></span></a>
+      <nav class="tabs-nav" id="nav" aria-label="Main"></nav>
+      <div class="hdr-actions">
+        <button class="search-btn" data-act="search" id="searchBtn" data-tip-lbl><span class="ic" id="searchIc"></span><span class="lbl" id="searchLbl"></span><kbd id="searchKbd">Ctrl K</kbd></button>
+        <div class="dd-wrap">
+          <button class="icon-btn bell" data-dd="notifs" id="bellBtn" aria-haspopup="true" aria-expanded="false"><span id="bellIc"></span><span class="badge-dot" id="bellBadge" hidden></span></button>
+          <div class="dd dd-right notif-panel" id="notifs"></div>
+        </div>
+        <div class="dd-wrap">
+          <button class="btn btn-primary" data-dd="newMenu" id="newBtn" aria-haspopup="true" aria-expanded="false"></button>
+          <div class="dd dd-right" id="newMenu"></div>
+        </div>
+        <div class="dd-wrap">
+          <button class="avatar-btn" data-dd="userMenu" id="userBtn" aria-haspopup="true" aria-expanded="false"></button>
+          <div class="dd dd-right user-menu" id="userMenu"></div>
+        </div>
       </div>
-    </aside>
-    <div class="main">
-      <header class="topbar">
-        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu"></button>
-        <div class="search"><span class="ic" data-ic="search"></span><input id="globalSearch" autocomplete="off" /><div class="search-results" id="searchResults"></div></div>
-        <button class="btn btn-primary" id="quickAdd"></button>
-        <div class="me"><span class="avatar" id="meAvatar"></span><div><strong id="meName"></strong><small id="meRole"></small></div></div>
-      </header>
-      <main id="view" class="view"></main>
+    </div>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer" aria-live="polite"></aside>
+  <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="modal-card" id="modalCard"></div></div>
+  <div class="palette" id="palette" role="dialog" aria-modal="true">
+    <div class="pal-card">
+      <label class="pal-in"><span id="palIc"></span><input id="palInput" autocomplete="off" spellcheck="false" /><kbd>Esc</kbd></label>
+      <div class="pal-list" id="palList"></div>
     </div>
   </div>
-  <div class="overlay" id="overlay"></div>
-  <aside class="drawer" id="drawer"></aside>
-  <div class="modal" id="modal"><div class="modal-card" id="modalCard"></div></div>
-  <div class="toast" id="toast"></div>
+  <div class="tip" id="tip" role="tooltip"></div>
+  <div class="toast" id="toast" role="status"></div>
+  <input type="file" id="importFile" accept="application/json,.json" hidden />
 
   <script src="config.js"></script>
+  <script src="i18n.js"></script>
   <script src="data.js"></script>
+  <script src="charts.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

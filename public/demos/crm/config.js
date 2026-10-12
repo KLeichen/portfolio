@@ -1,23 +1,30 @@
 // ---------------------------------------------------------------
 // Personalize per client here. Everything else reads from this.
+// Text that starts with @ is a translation key (see i18n.js).
 // ---------------------------------------------------------------
 window.CRM_CONFIG = {
-  brand: 'Nexo CRM',          // product name shown in the sidebar
+  brand: 'Nexo CRM',          // product name shown in the header
   company: 'Estudio Demo',    // client business name
-  logoLetter: 'N',            // letter inside the logo badge
-  accent: '#4fd1c5',          // main accent color
+  accent: '#4fd1c5',          // main accent color (any hex)
+  theme: 'dark',              // 'dark' | 'light'
   currency: 'USD',            // ISO code used for money formatting
-  locale: 'es-AR',            // number/date formatting
+  locale: 'es-AR',            // number/date formatting in Spanish
   lang: 'es',                 // default UI language: 'es' | 'en'
-  user: { name: 'Kevin Leichen', role: 'Admin', initials: 'KL' },
-  // Deal pipeline stages (order matters). id must be unique.
+  user: { name: 'Kevin Leichen', role: 'Admin' },
+  // Sales team. Owners in data.js must match these names.
+  team: [
+    { name: 'Kevin Leichen', role: 'Admin' },
+    { name: 'Ana Paz', role: 'Ventas' },
+    { name: 'Leo Ríos', role: 'Ventas' },
+  ],
+  // Deal pipeline stages, in order. Keep the ids 'won' and 'lost'.
   stages: [
-    { id: 'lead',        es: 'Lead',          en: 'Lead',          prob: 10 },
-    { id: 'qualified',   es: 'Calificado',    en: 'Qualified',     prob: 25 },
-    { id: 'proposal',    es: 'Propuesta',     en: 'Proposal',      prob: 50 },
-    { id: 'negotiation', es: 'Negociación',   en: 'Negotiation',   prob: 75 },
-    { id: 'won',         es: 'Ganado',        en: 'Won',           prob: 100 },
-    { id: 'lost',        es: 'Perdido',       en: 'Lost',          prob: 0 },
+    { id: 'lead',        es: 'Lead',        en: 'Lead',        prob: 10,  color: 'var(--info)' },
+    { id: 'qualified',   es: 'Calificado',  en: 'Qualified',   prob: 25,  color: 'var(--violet)' },
+    { id: 'proposal',    es: 'Propuesta',   en: 'Proposal',    prob: 50,  color: 'var(--accent)' },
+    { id: 'negotiation', es: 'Negociación', en: 'Negotiation', prob: 75,  color: 'var(--warn)' },
+    { id: 'won',         es: 'Ganado',      en: 'Won',         prob: 100, color: 'var(--good)' },
+    { id: 'lost',        es: 'Perdido',     en: 'Lost',        prob: 0,   color: 'var(--bad)' },
   ],
   monthlyTarget: 120000,      // revenue goal shown on the dashboard
 };

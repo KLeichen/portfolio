@@ -6,6 +6,7 @@ page: panaderia-demanda
 date: 2026-10-15
 cover: /projects/larkspur/weekday-en.png
 tools: [Python, pandas, scikit-learn, SciPy, Jupyter]
+embed: /projects/larkspur/planner.html?lang=en
 simulated: true
 highlights:
   - { value: "21%", label: "daily forecast error (vs 32% for the current rule)" }
@@ -29,3 +30,5 @@ Larkspur Bakehouse has three shops: Downtown, University and Harbor. Every morni
 Waste cost **€77k a year** and sell-outs **€34k to €53k** in lost margin. In the live two-week test, which included Croissant Week and the Harbor Festival, the plan made **6.9% more profit** than the current rule and wasted 20% less. I left the shop managers a practical rule per product: how far above the forecast to bake.
 
 ![Losses by shop](/projects/larkspur/losses-en.png)
+
+Below you can explore the bake plan by shop and product, and see what happens to profit if you bake more or less.

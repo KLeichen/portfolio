@@ -6,6 +6,7 @@ page: panaderia-demanda
 date: 2026-10-15
 cover: /projects/larkspur/weekday-es.png
 tools: [Python, pandas, scikit-learn, SciPy, Jupyter]
+embed: /projects/larkspur/planner.html
 simulated: true
 highlights:
   - { value: "21%", label: "de error diario del pronóstico (vs 32% de la regla actual)" }
@@ -29,3 +30,5 @@ Larkspur Bakehouse tiene tres locales: Centro, Universidad y Puerto. Cada mañan
 El desperdicio costaba **€77k por año** y los faltantes, entre **€34k y €53k** de margen perdido. En la prueba real de dos semanas, con la Semana del Croissant y el festival del puerto en el medio, el plan ganó un **6,9% más** que la regla actual y desperdició un 20% menos. A los encargados les dejé una regla práctica por producto: cuánto hornear por encima del pronóstico.
 
 ![Pérdidas por local](/projects/larkspur/losses-es.png)
+
+Más abajo podés explorar el plan de horneado por local y producto, y ver qué pasa con la ganancia si se hornea más o menos.

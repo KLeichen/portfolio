@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Larkspur Bake Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* A bakery's morning sheet: warm paper, crust browns, a butter accent for the plan being decided. */
+:root {
+  --bg: #f6efe3; --surface: #fffaf2; --ink: #2b1d12; --ink-2: #6b5544; --ink-3: #9a8572; --line: #e7d9c4;
+  --crust: #9c5b2b;       /* expected sold */
+  --crumb: #ecd3ac;       /* expected leftovers */
+  --butter: #d99a2b;      /* the plan / selection */
+  --band: #f3e4cb;        /* event days */
+  --good: #3f7a3a; --bad: #a8432f;
+  --display: "Fraunces", Georgia, serif; --body: "Work Sans", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1510; --surface: #261d16; --ink: #f3e8d8; --ink-2: #c4ae96; --ink-3: #8f7a66; --line: #3a2d22;
+    --crust: #d08a52; --crumb: #5e4630; --butter: #e9b14c; --band: #2f241b; --good: #8fc58a; --bad: #e08a74;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 22px 22px 18px; }
+.kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font-family: var(--display); font-size: 30px; margin: 4px 0 2px; letter-spacing: -.01em; }
+.sub { color: var(--ink-2); margin: 0 0 14px; max-width: 62em; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-bottom: 14px; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { border: 0; background: transparent; color: var(--ink-2); font: 500 13px var(--body); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+select { font: 500 13px var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; }
+.grid { display: grid; grid-template-columns: 1fr 300px; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.card h2 { font-family: var(--display); font-size: 17px; margin: 0 0 2px; }
+.card .note { color: var(--ink-3); font-size: 12px; margin: 0 0 8px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+.legend i.fc { height: 3px; border-radius: 2px; vertical-align: 3px; background: var(--ink); }
+svg text { font-family: var(--body); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.kpi b { display: block; font-family: var(--display); font-size: 22px; }
+.kpi span { color: var(--ink-2); font-size: 12px; }
+.kpi.hl { border-color: var(--butter); box-shadow: inset 0 0 0 1px var(--butter); }
+.delta { font-family: var(--mono); font-size: 11px; }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); }
+input[type=range] { width: 100%; accent-color: var(--butter); }
+.slider-head { display: flex; justify-content: space-between; align-items: baseline; }
+.slider-head b { font-family: var(--mono); font-size: 13px; }
+.reset { border: 1px solid var(--line); background: transparent; color: var(--ink-2); border-radius: 999px; font: 500 12px var(--body); padding: 3px 10px; cursor: pointer; }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 9px 11px; font-size: 12px; line-height: 1.5; opacity: 0; transition: opacity .1s; z-index: 5; min-width: 170px; }
+#tip b { font-family: var(--display); font-size: 14px; display: block; margin-bottom: 2px; }
+#tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.foot { color: var(--ink-3); font-size: 11.5px; margin-top: 10px; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker" id="kicker"></div>
+  <h1 id="title"></h1>
+  <p class="sub" id="sub"></p>
+  <div class="filters">
+    <div class="seg" id="shops" role="group"></div>
+    <select id="product" aria-label="product"></select>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2 id="chartTitle"></h2>
+      <p class="note" id="chartNote"></p>
+      <svg id="chart" width="100%" viewBox="0 0 700 380" role="img"></svg>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div>
+      <div class="kpis" id="kpis"></div>
+      <div class="card">
+        <div class="slider-head"><h2 id="sliderTitle"></h2><b id="adjLabel"></b></div>
+        <p class="note" id="sliderNote"></p>
+        <input type="range" id="adj" min="-30" max="30" step="1" value="0">
+        <svg id="curve" width="100%" viewBox="0 0 268 120"></svg>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span class="note" id="curveNote" style="margin:0"></span>
+          <button class="reset" id="reset"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="foot" id="foot"></p>
+</div>
+<div id="tip"></div>
+<script>
+const DATA = {"k":21.73,"rows":[["10-15",0,"SDL-01",28.5,33,6.5,1.8,0,0],["10-15",0,"BAG-01",38.5,46,3.2,0.7,0,0],["10-15",0,"CRO-01",56.4,65,2.8,0.75,0,0],["10-15",0,"CHC-01",37.5,42,3.2,0.95,0,0],["10-15",0,"CIN-01",25.4,30,3.5,0.9,0,0],["10-15",0,"MUF-01",30.1,35,3.0,0.8,0,0],["10-15",0,"HCC-01",40.6,44,4.5,1.6,0,0],["10-15",0,"FOC-01",22.1,27,3.8,0.9,0,0],["10-15",0,"BAN-01",17.1,21,3.0,0.7,0,0],["10-15",0,"COO-01",34.3,42,2.2,0.45,0,0],["10-15",1,"SDL-01",22.5,26,6.5,1.8,0,0],["10-15",1,"BAG-01",31.8,38,3.2,0.7,0,0],["10-15",1,"CRO-01",45.9,53,2.8,0.75,0,0],["10-15",1,"CHC-01",31.8,36,3.2,0.95,0,0],["10-15",1,"CIN-01",20.1,24,3.5,0.9,0,0],["10-15",1,"MUF-01",22.8,27,3.0,0.8,0,0],["10-15",1,"HCC-01",26.2,28,4.5,1.6,0,0],["10-15",1,"FOC-01",17.3,21,3.8,0.9,0,0],["10-15",1,"BAN-01",14.5,18,3.0,0.7,0,0],["10-15",1,"COO-01",29.5,36,2.2,0.45,0,0],["10-15",2,"SDL-01",19.8,23,6.5,1.8,0,0],["10-15",2,"BAG-01",28.8,35,3.2,0.7,0,0],["10-15",2,"CRO-01",41.1,47,2.8,0.75,0,0],["10-15",2,"CHC-01",28.6,32,3.2,0.95,0,0],["10-15",2,"CIN-01",18.4,22,3.5,0.9,0,0],["10-15",2,"MUF-01",19.3,23,3.0,0.8,0,0],["10-15",2,"HCC-01",20.8,23,4.5,1.6,0,0],["10-15",2,"FOC-01",14.9,18,3.8,0.9,0,0],["10-15",2,"BAN-01",12.0,15,3.0,0.7,0,0],["10-15",2,"COO-01",23.5,29,2.2,0.45,0,0],["10-16",0,"SDL-01",29.4,34,6.5,1.8,0,0],["10-16",0,"BAG-01",37.5,45,3.2,0.7,0,0],["10-16",0,"CRO-01",59.7,68,2.8,0.75,0,0],["10-16",0,"CHC-01",37.2,42,3.2,0.95,0,0],["10-16",0,"CIN-01",27.1,32,3.5,0.9,0,0],["10-16",0,"MUF-01",31.3,36,3.0,0.8,0,0],["10-16",0,"HCC-01",39.4,43,4.5,1.6,0,0],["10-16",0,"FOC-01",22.2,27,3.8,0.9,0,0],["10-16",0,"BAN-01",17.1,21,3.0,0.7,0,0],["10-16",0,"COO-01",35.0,43,2.2,0.45,0,0],["10-16",1,"SDL-01",20.7,24,6.5,1.8,0,0],["10-16",1,"BAG-01",25.8,31,3.2,0.7,0,0],["10-16",1,"CRO-01",41.2,47,2.8,0.75,0,0],["10-16",1,"CHC-01",27.6,31,3.2,0.95,0,0],["10-16",1,"CIN-01",18.0,21,3.5,0.9,0,0],["10-16",1,"MUF-01",20.2,24,3.0,0.8,0,0],["10-16",1,"HCC-01",23.8,26,4.5,1.6,0,0],["10-16",1,"FOC-01",16.2,20,3.8,0.9,0,0],["10-16",1,"BAN-01",13.0,16,3.0,0.7,0,0],["10-16",1,"COO-01",22.9,28,2.2,0.45,0,0],["10-16",2,"SDL-01",19.2,22,6.5,1.8,0,0],["10-16",2,"BAG-01",22.8,28,3.2,0.7,0,0],["10-16",2,"CRO-01",37.2,43,2.8,0.75,0,0],["10-16",2,"CHC-01",23.0,26,3.2,0.95,0,0],["10-16",2,"CIN-01",13.6,16,3.5,0.9,0,0],["10-16",2,"MUF-01",17.7,21,3.0,0.8,0,0],["10-16",2,"HCC-01",18.3,20,4.5,1.6,0,0],["10-16",2,"FOC-01",12.7,16,3.8,0.9,0,0],["10-16",2,"BAN-01",11.2,14,3.0,0.7,0,0],["10-16",2,"COO-01",20.9,26,2.2,0.45,0,0],["10-17",0,"SDL-01",22.3,26,6.5,1.8,0,0],["10-17",0,"BAG-01",28.3,34,3.2,0.7,0,0],["10-17",0,"CRO-01",40.8,47,2.8,0.75,0,0],["10-17",0,"CHC-01",26.8,30,3.2,0.95,0,0],["10-17",0,"CIN-01",18.1,22,3.5,0.9,0,0],["10-17",0,"MUF-01",21.5,25,3.0,0.8,0,0],["10-17",0,"HCC-01",29.9,32,4.5,1.6,0,0],["10-17",0,"FOC-01",15.4,19,3.8,0.9,0,0],["10-17",0,"BAN-01",13.3,16,3.0,0.7,0,0],["10-17",0,"COO-01",25.3,31,2.2,0.45,0,0],["10-17",1,"SDL-01",12.3,15,6.5,1.8,0,0],["10-17",1,"BAG-01",14.1,18,3.2,0.7,0,0],["10-17",1,"CRO-01",22.4,26,2.8,0.75,0,0],["10-17",1,"CHC-01",13.5,16,3.2,0.95,0,0],["10-17",1,"CIN-01",9.1,11,3.5,0.9,0,0],["10-17",1,"MUF-01",11.5,14,3.0,0.8,0,0],["10-17",1,"HCC-01",12.8,14,4.5,1.6,0,0],["10-17",1,"FOC-01",9.0,11,3.8,0.9,0,0],["10-17",1,"BAN-01",7.7,10,3.0,0.7,0,0],["10-17",1,"COO-01",11.5,15,2.2,0.45,0,0],["10-17",2,"SDL-01",50.7,58,6.5,1.8,0,0],["10-17",2,"BAG-01",47.6,57,3.2,0.7,0,0],["10-17",2,"CRO-01",74.0,84,2.8,0.75,0,0],["10-17",2,"CHC-01",48.6,55,3.2,0.95,0,0],["10-17",2,"CIN-01",30.6,36,3.5,0.9,0,0],["10-17",2,"MUF-01",43.0,49,3.0,0.8,0,0],["10-17",2,"HCC-01",39.4,43,4.5,1.6,0,0],["10-17",2,"FOC-01",27.0,32,3.8,0.9,0,0],["10-17",2,"BAN-01",22.3,27,3.0,0.7,0,0],["10-17",2,"COO-01",48.8,59,2.2,0.45,0,0],["10-18",1,"SDL-01",9.8,12,6.5,1.8,0,0],["10-18",1,"BAG-01",11.7,15,3.2,0.7,0,0],["10-18",1,"CRO-01",16.5,20,2.8,0.75,0,0],["10-18",1,"CHC-01",11.1,13,3.2,0.95,0,0],["10-18",1,"CIN-01",7.5,9,3.5,0.9,0,0],["10-18",1,"MUF-01",8.9,11,3.0,0.8,0,0],["10-18",1,"HCC-01",10.1,11,4.5,1.6,0,0],["10-18",1,"FOC-01",7.3,9,3.8,0.9,0,0],["10-18",1,"BAN-01",6.2,8,3.0,0.7,0,0],["10-18",1,"COO-01",10.6,14,2.2,0.45,0,0],["10-18",2,"SDL-01",54.5,62,6.5,1.8,0,0],["10-18",2,"BAG-01",53.1,63,3.2,0.7,0,0],["10-18",2,"CRO-01",76.4,87,2.8,0.75,0,0],["10-18",2,"CHC-01",55.1,62,3.2,0.95,0,0],["10-18",2,"CIN-01",36.7,43,3.5,0.9,0,0],["10-18",2,"MUF-01",43.2,50,3.0,0.8,0,0],["10-18",2,"HCC-01",42.9,46,4.5,1.6,0,0],["10-18",2,"FOC-01",31.2,37,3.8,0.9,0,0],["10-18",2,"BAN-01",26.0,31,3.0,0.7,0,0],["10-18",2,"COO-01",54.3,65,2.2,0.45,0,0],["10-19",0,"SDL-01",26.8,31,6.5,1.8,0,0],["10-19",0,"BAG-01",36.1,43,3.2,0.7,0,0],["10-19",0,"CRO-01",64.1,70,2.24,0.75,0,1],["10-19",0,"CHC-01",35.3,40,3.2,0.95,0,0],["10-19",0,"CIN-01",22.3,26,3.5,0.9,0,0],["10-19",0,"MUF-01",29.5,34,3.0,0.8,0,0],["10-19",0,"HCC-01",36.3,39,4.5,1.6,0,0],["10-19",0,"FOC-01",22.3,27,3.8,0.9,0,0],["10-19",0,"BAN-01",17.8,22,3.0,0.7,0,0],["10-19",0,"COO-01",34.0,41,2.2,0.45,0,0],["10-19",1,"SDL-01",23.5,27,6.5,1.8,0,0],["10-19",1,"BAG-01",32.4,39,3.2,0.7,0,0],["10-19",1,"CRO-01",55.0,60,2.24,0.75,0,1],["10-19",1,"CHC-01",32.1,36,3.2,0.95,0,0],["10-19",1,"CIN-01",21.5,25,3.5,0.9,0,0],["10-19",1,"MUF-01",26.0,30,3.0,0.8,0,0],["10-19",1,"HCC-01",26.7,29,4.5,1.6,0,0],["10-19",1,"FOC-01",19.4,23,3.8,0.9,0,0],["10-19",1,"BAN-01",15.0,18,3.0,0.7,0,0],["10-19",1,"COO-01",30.1,37,2.2,0.45,0,0],["10-19",2,"SDL-01",18.0,21,6.5,1.8,0,0],["10-19",2,"BAG-01",24.1,29,3.2,0.7,0,0],["10-19",2,"CRO-01",45.4,50,2.24,0.75,0,1],["10-19",2,"CHC-01",24.0,27,3.2,0.95,0,0],["10-19",2,"CIN-01",17.9,21,3.5,0.9,0,0],["10-19",2,"MUF-01",18.9,22,3.0,0.8,0,0],["10-19",2,"HCC-01",19.8,22,4.5,1.6,0,0],["10-19",2,"FOC-01",15.1,18,3.8,0.9,0,0],["10-19",2,"BAN-01",12.7,16,3.0,0.7,0,0],["10-19",2,"COO-01",23.1,29,2.2,0.45,0,0],["10-20",0,"SDL-01",25.5,30,6.5,1.8,0,0],["10-20",0,"BAG-01",34.3,41,3.2,0.7,0,0],["10-20",0,"CRO-01",61.8,68,2.24,0.75,0,1],["10-20",0,"CHC-01",34.0,38,3.2,0.95,0,0],["10-20",0,"CIN-01",24.0,28,3.5,0.9,0,0],["10-20",0,"MUF-01",28.9,34,3.0,0.8,0,0],["10-20",0,"HCC-01",35.1,38,4.5,1.6,0,0],["10-20",0,"FOC-01",21.5,26,3.8,0.9,0,0],["10-20",0,"BAN-01",17.7,22,3.0,0.7,0,0],["10-20",0,"COO-01",32.8,40,2.2,0.45,0,0],["10-20",1,"SDL-01",22.4,26,6.5,1.8,0,0],["10-20",1,"BAG-01",31.4,38,3.2,0.7,0,0],["10-20",1,"CRO-01",53.4,59,2.24,0.75,0,1],["10-20",1,"CHC-01",32.2,36,3.2,0.95,0,0],["10-20",1,"CIN-01",20.2,24,3.5,0.9,0,0],["10-20",1,"MUF-01",24.5,29,3.0,0.8,0,0],["10-20",1,"HCC-01",28.1,31,4.5,1.6,0,0],["10-20",1,"FOC-01",18.7,23,3.8,0.9,0,0],["10-20",1,"BAN-01",15.0,18,3.0,0.7,0,0],["10-20",1,"COO-01",28.1,34,2.2,0.45,0,0],["10-20",2,"SDL-01",17.9,21,6.5,1.8,0,0],["10-20",2,"BAG-01",23.0,28,3.2,0.7,0,0],["10-20",2,"CRO-01",45.1,50,2.24,0.75,0,1],["10-20",2,"CHC-01",23.8,27,3.2,0.95,0,0],["10-20",2,"CIN-01",17.6,21,3.5,0.9,0,0],["10-20",2,"MUF-01",18.8,22,3.0,0.8,0,0],["10-20",2,"HCC-01",20.1,22,4.5,1.6,0,0],["10-20",2,"FOC-01",14.9,18,3.8,0.9,0,0],["10-20",2,"BAN-01",12.8,16,3.0,0.7,0,0],["10-20",2,"COO-01",22.7,28,2.2,0.45,0,0],["10-21",0,"SDL-01",26.2,30,6.5,1.8,0,0],["10-21",0,"BAG-01",35.4,43,3.2,0.7,0,0],["10-21",0,"CRO-01",64.2,70,2.24,0.75,0,1],["10-21",0,"CHC-01",35.5,40,3.2,0.95,0,0],["10-21",0,"CIN-01",23.5,28,3.5,0.9,0,0],["10-21",0,"MUF-01",28.5,33,3.0,0.8,0,0],["10-21",0,"HCC-01",36.0,39,4.5,1.6,0,0],["10-21",0,"FOC-01",21.1,25,3.8,0.9,0,0],["10-21",0,"BAN-01",17.0,21,3.0,0.7,0,0],["10-21",0,"COO-01",33.9,41,2.2,0.45,0,0],["10-21",1,"SDL-01",22.2,26,6.5,1.8,0,0],["10-21",1,"BAG-01",31.7,38,3.2,0.7,0,0],["10-21",1,"CRO-01",54.0,59,2.24,0.75,0,1],["10-21",1,"CHC-01",31.2,35,3.2,0.95,0,0],["10-21",1,"CIN-01",20.0,24,3.5,0.9,0,0],["10-21",1,"MUF-01",23.6,28,3.0,0.8,0,0],["10-21",1,"HCC-01",27.8,30,4.5,1.6,0,0],["10-21",1,"FOC-01",17.9,22,3.8,0.9,0,0],["10-21",1,"BAN-01",14.9,18,3.0,0.7,0,0],["10-21",1,"COO-01",29.4,36,2.2,0.45,0,0],["10-21",2,"SDL-01",18.4,22,6.5,1.8,0,0],["10-21",2,"BAG-01",23.3,28,3.2,0.7,0,0],["10-21",2,"CRO-01",46.0,51,2.24,0.75,0,1],["10-21",2,"CHC-01",23.9,27,3.2,0.95,0,0],["10-21",2,"CIN-01",17.8,21,3.5,0.9,0,0],["10-21",2,"MUF-01",19.0,22,3.0,0.8,0,0],["10-21",2,"HCC-01",20.0,22,4.5,1.6,0,0],["10-21",2,"FOC-01",14.9,18,3.8,0.9,0,0],["10-21",2,"BAN-01",12.7,16,3.0,0.7,0,0],["10-21",2,"COO-01",22.8,28,2.2,0.45,0,0],["10-22",0,"SDL-01",27.7,32,6.5,1.8,0,0],["10-22",0,"BAG-01",37.6,45,3.2,0.7,0,0],["10-22",0,"CRO-01",68.1,75,2.24,0.75,0,1],["10-22",0,"CHC-01",38.2,43,3.2,0.95,0,0],["10-22",0,"CIN-01",25.3,30,3.5,0.9,0,0],["10-22",0,"MUF-01",30.1,35,3.0,0.8,0,0],["10-22",0,"HCC-01",40.1,43,4.5,1.6,0,0],["10-22",0,"FOC-01",20.9,25,3.8,0.9,0,0],["10-22",0,"BAN-01",16.8,21,3.0,0.7,0,0],["10-22",0,"COO-01",36.5,44,2.2,0.45,0,0],["10-22",1,"SDL-01",21.3,25,6.5,1.8,0,0],["10-22",1,"BAG-01",30.9,37,3.2,0.7,0,0],["10-22",1,"CRO-01",49.8,55,2.24,0.75,0,1],["10-22",1,"CHC-01",31.1,35,3.2,0.95,0,0],["10-22",1,"CIN-01",19.1,23,3.5,0.9,0,0],["10-22",1,"MUF-01",22.1,26,3.0,0.8,0,0],["10-22",1,"HCC-01",27.3,30,4.5,1.6,0,0],["10-22",1,"FOC-01",15.8,19,3.8,0.9,0,0],["10-22",1,"BAN-01",14.3,18,3.0,0.7,0,0],["10-22",1,"COO-01",28.9,35,2.2,0.45,0,0],["10-22",2,"SDL-01",19.9,23,6.5,1.8,0,0],["10-22",2,"BAG-01",27.5,33,3.2,0.7,0,0],["10-22",2,"CRO-01",55.7,61,2.24,0.75,0,1],["10-22",2,"CHC-01",28.5,32,3.2,0.95,0,0],["10-22",2,"CIN-01",17.9,21,3.5,0.9,0,0],["10-22",2,"MUF-01",20.2,24,3.0,0.8,0,0],["10-22",2,"HCC-01",20.4,22,4.5,1.6,0,0],["10-22",2,"FOC-01",15.4,19,3.8,0.9,0,0],["10-22",2,"BAN-01",12.9,16,3.0,0.7,0,0],["10-22",2,"COO-01",26.2,32,2.2,0.45,0,0],["10-23",0,"SDL-01",27.6,32,6.5,1.8,0,0],["10-23",0,"BAG-01",35.7,43,3.2,0.7,0,0],["10-23",0,"CRO-01",72.8,80,2.24,0.75,0,1],["10-23",0,"CHC-01",37.1,42,3.2,0.95,0,0],["10-23",0,"CIN-01",24.4,29,3.5,0.9,0,0],["10-23",0,"MUF-01",31.1,36,3.0,0.8,0,0],["10-23",0,"HCC-01",38.8,42,4.5,1.6,0,0],["10-23",0,"FOC-01",21.1,25,3.8,0.9,0,0],["10-23",0,"BAN-01",16.3,20,3.0,0.7,0,0],["10-23",0,"COO-01",35.8,44,2.2,0.45,0,0],["10-23",1,"SDL-01",18.8,22,6.5,1.8,0,0],["10-23",1,"BAG-01",25.7,31,3.2,0.7,0,0],["10-23",1,"CRO-01",46.3,51,2.24,0.75,0,1],["10-23",1,"CHC-01",26.8,30,3.2,0.95,0,0],["10-23",1,"CIN-01",17.2,21,3.5,0.9,0,0],["10-23",1,"MUF-01",19.9,23,3.0,0.8,0,0],["10-23",1,"HCC-01",22.2,24,4.5,1.6,0,0],["10-23",1,"FOC-01",15.4,19,3.8,0.9,0,0],["10-23",1,"BAN-01",13.4,17,3.0,0.7,0,0],["10-23",1,"COO-01",23.3,29,2.2,0.45,0,0],["10-23",2,"SDL-01",18.9,22,6.5,1.8,0,0],["10-23",2,"BAG-01",22.5,28,3.2,0.7,0,0],["10-23",2,"CRO-01",51.4,57,2.24,0.75,0,1],["10-23",2,"CHC-01",23.0,26,3.2,0.95,0,0],["10-23",2,"CIN-01",14.7,18,3.5,0.9,0,0],["10-23",2,"MUF-01",19.4,23,3.0,0.8,0,0],["10-23",2,"HCC-01",18.3,20,4.5,1.6,0,0],["10-23",2,"FOC-01",13.3,16,3.8,0.9,0,0],["10-23",2,"BAN-01",11.9,15,3.0,0.7,0,0],["10-23",2,"COO-01",23.7,29,2.2,0.45,0,0],["10-24",0,"SDL-01",22.5,26,6.5,1.8,0,0],["10-24",0,"BAG-01",29.1,35,3.2,0.7,0,0],["10-24",0,"CRO-01",53.1,58,2.24,0.75,0,1],["10-24",0,"CHC-01",29.4,33,3.2,0.95,0,0],["10-24",0,"CIN-01",16.8,20,3.5,0.9,0,0],["10-24",0,"MUF-01",21.5,25,3.0,0.8,0,0],["10-24",0,"HCC-01",30.3,33,4.5,1.6,0,0],["10-24",0,"FOC-01",13.1,16,3.8,0.9,0,0],["10-24",0,"BAN-01",13.2,16,3.0,0.7,0,0],["10-24",0,"COO-01",27.6,34,2.2,0.45,0,0],["10-24",1,"SDL-01",10.6,13,6.5,1.8,0,0],["10-24",1,"BAG-01",14.0,18,3.2,0.7,0,0],["10-24",1,"CRO-01",27.3,30,2.24,0.75,0,1],["10-24",1,"CHC-01",13.7,16,3.2,0.95,0,0],["10-24",1,"CIN-01",8.9,11,3.5,0.9,0,0],["10-24",1,"MUF-01",11.4,14,3.0,0.8,0,0],["10-24",1,"HCC-01",12.6,14,4.5,1.6,0,0],["10-24",1,"FOC-01",8.8,11,3.8,0.9,0,0],["10-24",1,"BAN-01",6.1,8,3.0,0.7,0,0],["10-24",1,"COO-01",11.5,15,2.2,0.45,0,0],["10-24",2,"SDL-01",110.0,126,6.5,1.8,1,0],["10-24",2,"BAG-01",111.6,134,3.2,0.7,1,0],["10-24",2,"CRO-01",215.4,236,2.24,0.75,1,1],["10-24",2,"CHC-01",111.6,126,3.2,0.95,1,0],["10-24",2,"CIN-01",73.6,86,3.5,0.9,1,0],["10-24",2,"MUF-01",104.2,121,3.0,0.8,1,0],["10-24",2,"HCC-01",102.4,111,4.5,1.6,1,0],["10-24",2,"FOC-01",64.8,77,3.8,0.9,1,0],["10-24",2,"BAN-01",52.5,63,3.0,0.7,1,0],["10-24",2,"COO-01",114.4,139,2.2,0.45,1,0],["10-25",1,"SDL-01",9.7,12,6.5,1.8,0,0],["10-25",1,"BAG-01",10.9,14,3.2,0.7,0,0],["10-25",1,"CRO-01",18.9,21,2.24,0.75,0,1],["10-25",1,"CHC-01",10.4,12,3.2,0.95,0,0],["10-25",1,"CIN-01",7.2,9,3.5,0.9,0,0],["10-25",1,"MUF-01",9.4,11,3.0,0.8,0,0],["10-25",1,"HCC-01",9.6,11,4.5,1.6,0,0],["10-25",1,"FOC-01",6.7,9,3.8,0.9,0,0],["10-25",1,"BAN-01",6.4,8,3.0,0.7,0,0],["10-25",1,"COO-01",9.4,12,2.2,0.45,0,0],["10-25",2,"SDL-01",109.7,126,6.5,1.8,1,0],["10-25",2,"BAG-01",109.3,132,3.2,0.7,1,0],["10-25",2,"CRO-01",210.8,231,2.24,0.75,1,1],["10-25",2,"CHC-01",118.8,134,3.2,0.95,1,0],["10-25",2,"CIN-01",76.8,90,3.5,0.9,1,0],["10-25",2,"MUF-01",105.6,122,3.0,0.8,1,0],["10-25",2,"HCC-01",101.1,109,4.5,1.6,1,0],["10-25",2,"FOC-01",69.7,83,3.8,0.9,1,0],["10-25",2,"BAN-01",57.1,68,3.0,0.7,1,0],["10-25",2,"COO-01",120.7,147,2.2,0.45,1,0],["10-26",0,"SDL-01",26.2,30,6.5,1.8,0,0],["10-26",0,"BAG-01",35.7,43,3.2,0.7,0,0],["10-26",0,"CRO-01",53.7,61,2.8,0.75,0,0],["10-26",0,"CHC-01",36.0,41,3.2,0.95,0,0],["10-26",0,"CIN-01",22.0,26,3.5,0.9,0,0],["10-26",0,"MUF-01",29.3,34,3.0,0.8,0,0],["10-26",0,"HCC-01",37.0,40,4.5,1.6,0,0],["10-26",0,"FOC-01",19.8,24,3.8,0.9,0,0],["10-26",0,"BAN-01",17.6,21,3.0,0.7,0,0],["10-26",0,"COO-01",34.0,41,2.2,0.45,0,0],["10-26",1,"SDL-01",23.4,27,6.5,1.8,0,0],["10-26",1,"BAG-01",31.5,38,3.2,0.7,0,0],["10-26",1,"CRO-01",46.8,54,2.8,0.75,0,0],["10-26",1,"CHC-01",32.0,36,3.2,0.95,0,0],["10-26",1,"CIN-01",21.4,25,3.5,0.9,0,0],["10-26",1,"MUF-01",25.9,30,3.0,0.8,0,0],["10-26",1,"HCC-01",26.2,28,4.5,1.6,0,0],["10-26",1,"FOC-01",17.9,22,3.8,0.9,0,0],["10-26",1,"BAN-01",15.3,19,3.0,0.7,0,0],["10-26",1,"COO-01",28.0,34,2.2,0.45,0,0],["10-26",2,"SDL-01",17.9,21,6.5,1.8,0,0],["10-26",2,"BAG-01",23.7,29,3.2,0.7,0,0],["10-26",2,"CRO-01",33.6,39,2.8,0.75,0,0],["10-26",2,"CHC-01",23.8,27,3.2,0.95,0,0],["10-26",2,"CIN-01",19.0,23,3.5,0.9,0,0],["10-26",2,"MUF-01",19.6,23,3.0,0.8,0,0],["10-26",2,"HCC-01",19.4,21,4.5,1.6,0,0],["10-26",2,"FOC-01",14.9,18,3.8,0.9,0,0],["10-26",2,"BAN-01",12.7,16,3.0,0.7,0,0],["10-26",2,"COO-01",24.1,30,2.2,0.45,0,0],["10-27",0,"SDL-01",26.8,31,6.5,1.8,0,0],["10-27",0,"BAG-01",35.4,43,3.2,0.7,0,0],["10-27",0,"CRO-01",52.9,61,2.8,0.75,0,0],["10-27",0,"CHC-01",36.0,41,3.2,0.95,0,0],["10-27",0,"CIN-01",22.7,27,3.5,0.9,0,0],["10-27",0,"MUF-01",29.6,34,3.0,0.8,0,0],["10-27",0,"HCC-01",36.5,40,4.5,1.6,0,0],["10-27",0,"FOC-01",20.1,24,3.8,0.9,0,0],["10-27",0,"BAN-01",17.3,21,3.0,0.7,0,0],["10-27",0,"COO-01",33.0,40,2.2,0.45,0,0],["10-27",1,"SDL-01",23.9,28,6.5,1.8,0,0],["10-27",1,"BAG-01",31.0,37,3.2,0.7,0,0],["10-27",1,"CRO-01",47.5,55,2.8,0.75,0,0],["10-27",1,"CHC-01",32.0,36,3.2,0.95,0,0],["10-27",1,"CIN-01",20.7,25,3.5,0.9,0,0],["10-27",1,"MUF-01",24.7,29,3.0,0.8,0,0],["10-27",1,"HCC-01",24.7,27,4.5,1.6,0,0],["10-27",1,"FOC-01",17.7,22,3.8,0.9,0,0],["10-27",1,"BAN-01",15.3,19,3.0,0.7,0,0],["10-27",1,"COO-01",27.5,34,2.2,0.45,0,0],["10-27",2,"SDL-01",18.3,21,6.5,1.8,0,0],["10-27",2,"BAG-01",22.9,28,3.2,0.7,0,0],["10-27",2,"CRO-01",34.0,39,2.8,0.75,0,0],["10-27",2,"CHC-01",24.1,27,3.2,0.95,0,0],["10-27",2,"CIN-01",17.7,21,3.5,0.9,0,0],["10-27",2,"MUF-01",18.6,22,3.0,0.8,0,0],["10-27",2,"HCC-01",19.5,21,4.5,1.6,0,0],["10-27",2,"FOC-01",15.1,18,3.8,0.9,0,0],["10-27",2,"BAN-01",12.6,16,3.0,0.7,0,0],["10-27",2,"COO-01",24.0,30,2.2,0.45,0,0],["10-28",0,"SDL-01",25.1,29,6.5,1.8,0,0],["10-28",0,"BAG-01",35.2,42,3.2,0.7,0,0],["10-28",0,"CRO-01",50.3,58,2.8,0.75,0,0],["10-28",0,"CHC-01",35.5,40,3.2,0.95,0,0],["10-28",0,"CIN-01",22.6,27,3.5,0.9,0,0],["10-28",0,"MUF-01",27.7,32,3.0,0.8,0,0],["10-28",0,"HCC-01",35.9,39,4.5,1.6,0,0],["10-28",0,"FOC-01",19.6,24,3.8,0.9,0,0],["10-28",0,"BAN-01",16.9,21,3.0,0.7,0,0],["10-28",0,"COO-01",32.5,40,2.2,0.45,0,0],["10-28",1,"SDL-01",22.1,26,6.5,1.8,0,0],["10-28",1,"BAG-01",30.3,37,3.2,0.7,0,0],["10-28",1,"CRO-01",44.5,51,2.8,0.75,0,0],["10-28",1,"CHC-01",31.8,36,3.2,0.95,0,0],["10-28",1,"CIN-01",19.8,24,3.5,0.9,0,0],["10-28",1,"MUF-01",23.3,27,3.0,0.8,0,0],["10-28",1,"HCC-01",25.2,27,4.5,1.6,0,0],["10-28",1,"FOC-01",17.1,21,3.8,0.9,0,0],["10-28",1,"BAN-01",15.2,19,3.0,0.7,0,0],["10-28",1,"COO-01",27.6,34,2.2,0.45,0,0],["10-28",2,"SDL-01",18.3,21,6.5,1.8,0,0],["10-28",2,"BAG-01",23.1,28,3.2,0.7,0,0],["10-28",2,"CRO-01",33.8,39,2.8,0.75,0,0],["10-28",2,"CHC-01",23.7,27,3.2,0.95,0,0],["10-28",2,"CIN-01",18.3,22,3.5,0.9,0,0],["10-28",2,"MUF-01",19.6,23,3.0,0.8,0,0],["10-28",2,"HCC-01",20.5,22,4.5,1.6,0,0],["10-28",2,"FOC-01",15.1,18,3.8,0.9,0,0],["10-28",2,"BAN-01",12.7,16,3.0,0.7,0,0],["10-28",2,"COO-01",23.7,29,2.2,0.45,0,0]]};
+const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "es";
+const T = {
+  es: { kicker: "Larkspur Bakehouse · escenario simulado", title: "Plan de horneado, 15–28 de octubre",
+    sub: "Pronóstico de demanda y cantidad a hornear por local, producto y día. Pasá el mouse por cada día para ver el detalle, y mové el control para ver qué pasa si se hornea más o menos que el plan.",
+    shops: ["Todos", "Centro", "Universidad", "Puerto"], all: "Todos los productos",
+    chartTitle: "Qué hornear cada día", chartNote: "Barras: lo que se hornea, partido en venta esperada y sobrante esperado. Línea: demanda pronosticada.",
+    lg: ["Venta esperada", "Sobrante esperado", "Demanda pronosticada", "Promoción o festival"],
+    k: ["unidades a hornear", "sobrante esperado", "agotados esperados", "ganancia esperada"],
+    sliderTitle: "Hornear más o menos", sliderNote: "Ajuste sobre el plan recomendado. La curva muestra la ganancia esperada: el plan queda cerca de la cima.",
+    reset: "Volver al plan", curveNote: "ganancia esperada según el ajuste", plan: "plan",
+    tip: { fc: "Demanda pronosticada", bake: "A hornear", sold: "Venta esperada", left: "Sobrante esperado", so: "Prob. de agotarse", ev: ["Semana del Croissant", "Festival del Puerto"] },
+    vsPlan: "vs plan", days: "días",
+    foot: "Ganancia = ventas − costo de lo horneado; lo que sobra se dona y vale cero. Demanda modelada como binomial negativa alrededor del pronóstico. Datos sintéticos.",
+    ev: ["Semana del Croissant", "Festival"], dow: ["Do","Lu","Ma","Mi","Ju","Vi","Sá"],
+    names: { "SDL-01": "Pan de masa madre", "BAG-01": "Baguette", "CRO-01": "Croissant", "CHC-01": "Croissant de chocolate", "CIN-01": "Rol de canela", "MUF-01": "Muffin de arándanos", "HCC-01": "Croissant jamón y queso", "FOC-01": "Focaccia (porción)", "BAN-01": "Budín de banana (porción)", "COO-01": "Galletita con chips" } },
+  en: { kicker: "Larkspur Bakehouse · simulated client scenario", title: "Bake plan, 15–28 October",
+    sub: "Forecast demand and how much to bake per shop, product and day. Hover over a day for the detail, and move the control to see what happens if you bake more or less than the plan.",
+    shops: ["All", "Downtown", "University", "Harbor"], all: "All products",
+    chartTitle: "What to bake each day", chartNote: "Bars: what gets baked, split into expected sales and expected leftovers. Line: forecast demand.",
+    lg: ["Expected sales", "Expected leftovers", "Forecast demand", "Promotion or festival"],
+    k: ["units to bake", "expected leftovers", "expected sell-outs", "expected profit"],
+    sliderTitle: "Bake more or less", sliderNote: "Adjustment to the recommended plan. The curve shows expected profit: the plan sits near the top.",
+    reset: "Back to plan", curveNote: "expected profit by adjustment", plan: "plan",
+    tip: { fc: "Forecast demand", bake: "To bake", sold: "Expected sales", left: "Expected leftovers", so: "Chance of selling out", ev: ["Croissant Week", "Harbor Festival"] },
+    vsPlan: "vs plan", days: "days",
+    foot: "Profit = sales − cost of what is baked; leftovers are donated and worth nothing. Demand modelled as negative binomial around the forecast. Synthetic data.",
+    ev: ["Croissant Week", "Festival"], dow: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+    names: { "SDL-01": "Sourdough loaf", "BAG-01": "Baguette", "CRO-01": "Croissant", "CHC-01": "Chocolate croissant", "CIN-01": "Cinnamon roll", "MUF-01": "Blueberry muffin", "HCC-01": "Ham & cheese croissant", "FOC-01": "Focaccia slice", "BAN-01": "Banana bread slice", "COO-01": "Chocolate chip cookie" } }
+}[lang];
+document.documentElement.lang = lang;
+const $ = (id) => document.getElementById(id);
+for (const id of ["kicker","title","sub","chartTitle","chartNote","sliderTitle","sliderNote","curveNote","foot"]) $(id).textContent = T[id];
+$("reset").textContent = T.reset;
+const nf = new Intl.NumberFormat(lang === "es" ? "es-AR" : "en-GB", { maximumFractionDigits: 0 });
+const eur = (v) => "€" + nf.format(v);
+const pct = (v) => nf.format(v * 100) + "%";
+
+// ---- expected outcomes under a negative binomial demand ----
+const K = DATA.k;
+function outcome(mu, q) {
+  if (q <= 0) return { sold: 0, left: 0, pso: 1 };
+  const p = K / (K + mu); let pn = Math.pow(p, K), cdf = 0, es = 0;
+  for (let n = 0; n < q; n++) { es += n * pn; cdf += pn; pn *= (n + K) / (n + 1) * (1 - p); }
+  const pso = Math.max(0, 1 - cdf);
+  const sold = es + q * pso;
+  return { sold, left: q - sold, pso };
+}
+const rows = DATA.rows.map(([d, s, sku, mu, q, price, cost, fest, promo]) => ({ d, s, sku, mu, q, price, cost, fest, promo }));
+const dates = [...new Set(rows.map((r) => r.d))];
+let shop = -1, sku = "all", adj = 0;
+
+// ---- filters ----
+T.shops.forEach((name, i) => {
+  const b = document.createElement("button"); b.textContent = name; b.setAttribute("aria-pressed", i === 0);
+  b.onclick = () => { shop = i - 1; [...$("shops").children].forEach((c, j) => c.setAttribute("aria-pressed", j === i)); render(); };
+  $("shops").appendChild(b);
+});
+const sel = $("product");
+sel.add(new Option(T.all, "all"));
+[...new Set(rows.map((r) => r.sku))].forEach((s) => sel.add(new Option(T.names[s], s)));
+sel.onchange = () => { sku = sel.value; render(); };
+$("adj").oninput = (e) => { adj = +e.target.value; render(); };
+$("reset").onclick = () => { adj = 0; $("adj").value = 0; render(); };
+$("legend").innerHTML = `<span><i style="background:var(--crust)"></i>${T.lg[0]}</span><span><i style="background:var(--crumb)"></i>${T.lg[1]}</span><span><i class="fc"></i>${T.lg[2]}</span><span><i style="background:var(--band);border:1px solid var(--line)"></i>${T.lg[3]}</span>`;
+
+const sel_rows = () => rows.filter((r) => (shop < 0 || r.s === shop) && (sku === "all" || r.sku === sku));
+function evaluate(rs, a) {
+  let q = 0, sold = 0, left = 0, so = 0, profit = 0, mu = 0;
+  for (const r of rs) {
+    const qq = Math.max(0, Math.round(r.q * (1 + a / 100))); const o = outcome(r.mu, qq);
+    q += qq; sold += o.sold; left += o.left; so += o.pso; mu += r.mu; profit += o.sold * r.price - qq * r.cost;
+  }
+  return { q, sold, left, so, profit, mu };
+}
+
+// ---- main chart ----
+const svgNS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+const tip = $("tip");
+function showTip(ev, html) { tip.innerHTML = html; tip.style.opacity = 1; const x = Math.min(ev.clientX + 14, innerWidth - tip.offsetWidth - 8); tip.style.left = x + "px"; tip.style.top = Math.max(8, ev.clientY - tip.offsetHeight - 12) + "px"; }
+const hideTip = () => (tip.style.opacity = 0);
+
+function niceStep(v) { const m = Math.pow(10, Math.floor(Math.log10(v))); for (const s of [1, 2, 5, 10]) if (s * m >= v) return s * m; return 10 * m; }
+function render() {
+  const rs = sel_rows();
+  const per = dates.map((d) => { const dr = rs.filter((r) => r.d === d); return { d, ...evaluate(dr, adj), fest: dr.some((r) => r.fest), promo: dr.some((r) => r.promo) }; });
+  const svg = $("chart"); svg.innerHTML = "";
+  const W = 700, H = 380, L = 44, R = 8, Tp = 22, B = 46;
+  const top = Math.max(...per.map((p) => Math.max(p.q, p.mu))) * 1.05 || 1;
+  const step = niceStep(top / 4), nTicks = Math.ceil(top / step), ymax = step * nTicks;
+  const bw = (W - L - R) / per.length, y = (v) => Tp + (H - Tp - B) * (1 - v / ymax);
+  // event bands
+  let run = -1;
+  per.forEach((p, i) => {
+    const on = p.fest || p.promo;
+    if (on && run < 0) run = i;
+    if (run >= 0 && (!on || i === per.length - 1)) { const end = on ? i + 1 : i; el("rect", { x: L + run * bw, y: Tp, width: (end - run) * bw, height: H - Tp - B, fill: "var(--band)" }, svg); run = -1; }
+  });
+  const firstPromo = per.findIndex((p) => p.promo), firstFest = per.findIndex((p) => p.fest);
+  if (firstPromo >= 0) el("text", { x: L + firstPromo * bw + 4, y: Tp - 7, "font-size": 11, fill: "var(--ink-2)" }, svg).textContent = T.ev[0];
+  if (firstFest >= 0) el("text", { x: L + (firstFest + 2) * bw - 4, y: Tp - 7, "font-size": 11, fill: "var(--ink-2)", "text-anchor": "end" }, svg).textContent = T.ev[1];
+  // grid
+  for (let i = 0; i <= nTicks; i++) { const v = step * i; el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--line)" }, svg); el("text", { x: L - 6, y: y(v) + 4, "font-size": 11, fill: "var(--ink-3)", "text-anchor": "end" }, svg).textContent = nf.format(v); }
+  // bars
+  per.forEach((p, i) => {
+    const x = L + i * bw + bw * 0.18, w = bw * 0.64;
+    el("rect", { x, y: y(p.q), width: w, height: Math.max(0, y(p.sold) - y(p.q) - 1.5), fill: "var(--crumb)", rx: 3 }, svg);
+    el("rect", { x, y: y(p.sold), width: w, height: Math.max(0, y(0) - y(p.sold)), fill: "var(--crust)", rx: 3 }, svg);
+    const dt = new Date("2026-" + p.d + "T12:00:00");
+    el("text", { x: x + w / 2, y: H - B + 16, "font-size": 11, fill: "var(--ink-2)", "text-anchor": "middle" }, svg).textContent = T.dow[dt.getDay()];
+    el("text", { x: x + w / 2, y: H - B + 30, "font-size": 10.5, fill: "var(--ink-3)", "text-anchor": "middle" }, svg).textContent = dt.getDate();
+  });
+  // forecast line
+  const pts = per.map((p, i) => `${L + i * bw + bw / 2},${y(p.mu)}`).join(" ");
+  el("polyline", { points: pts, fill: "none", stroke: "var(--ink)", "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  per.forEach((p, i) => el("circle", { cx: L + i * bw + bw / 2, cy: y(p.mu), r: 3.5, fill: "var(--ink)", stroke: "var(--surface)", "stroke-width": 2 }, svg));
+  // hover targets
+  per.forEach((p, i) => {
+    const hit = el("rect", { x: L + i * bw, y: Tp, width: bw, height: H - Tp - B + 34, fill: "transparent" }, svg);
+    const dt = new Date("2026-" + p.d + "T12:00:00");
+    const ev = [p.promo ? T.tip.ev[0] : "", p.fest ? T.tip.ev[1] : ""].filter(Boolean).join(" · ");
+    const nShops = rs.filter((r) => r.d === p.d).length;
+    hit.onmousemove = (e) => showTip(e, `<b>${T.dow[dt.getDay()]} ${dt.getDate()}/10</b>${ev ? `<div style="opacity:.75">${ev}</div>` : ""}
+      <div class="r"><span>${T.tip.fc}</span><span>${nf.format(p.mu)}</span></div>
+      <div class="r"><span>${T.tip.bake}</span><span>${nf.format(p.q)}</span></div>
+      <div class="r"><span>${T.tip.sold}</span><span>${nf.format(p.sold)}</span></div>
+      <div class="r"><span>${T.tip.left}</span><span>${nf.format(p.left)}</span></div>
+      ${nShops === 1 ? `<div class="r"><span>${T.tip.so}</span><span>${pct(p.so)}</span></div>` : ""}`);
+    hit.onmouseleave = hideTip;
+  });
+
+  // KPIs vs plan
+  const cur = evaluate(rs, adj), base = evaluate(rs, 0);
+  const d = (a, b, goodUp, fmt) => adj === 0 ? "" : `<div class="delta ${(a - b >= 0) === goodUp ? "up" : "down"}">${a - b >= 0 ? "+" : "−"}${fmt(Math.abs(a - b))} ${T.vsPlan}</div>`;
+  $("kpis").innerHTML = [
+    [nf.format(cur.q), T.k[0], d(cur.q, base.q, true, nf.format).replace(/ (up|down)"/, ' "'), false],
+    [nf.format(cur.left), T.k[1], d(cur.left, base.left, false, nf.format), false],
+    [nf.format(cur.so), T.k[2], d(cur.so, base.so, false, nf.format), false],
+    [eur(cur.profit), T.k[3], d(cur.profit, base.profit, true, eur), true],
+  ].map(([v, l, dl, hl]) => `<div class="kpi${hl ? " hl" : ""}"><b>${v}</b><span>${l}</span>${dl}</div>`).join("");
+  $("adjLabel").textContent = (adj > 0 ? "+" : adj < 0 ? "−" : "±") + Math.abs(adj) + "%";
+  drawCurve(rs);
+}
+// profit curve over the adjustment range (cached per selection)
+const cache = {};
+function drawCurve(rs) {
+  const key = shop + "|" + sku;
+  if (!cache[key]) cache[key] = Array.from({ length: 13 }, (_, i) => { const a = -30 + i * 5; return [a, evaluate(rs, a).profit]; });
+  const pts = cache[key], svg = $("curve"); svg.innerHTML = "";
+  const W = 268, H = 120, L = 6, R = 6, Tp = 12, B = 22;
+  const lo = Math.min(...pts.map((p) => p[1])), hi = Math.max(...pts.map((p) => p[1]));
+  const x = (a) => L + (a + 30) / 60 * (W - L - R), y = (v) => Tp + (H - Tp - B) * (1 - (v - lo) / ((hi - lo) || 1));
+  el("line", { x1: x(0), x2: x(0), y1: Tp - 4, y2: H - B, stroke: "var(--line)", "stroke-dasharray": "3 3" }, svg);
+  el("text", { x: x(0), y: H - 6, "font-size": 10.5, fill: "var(--ink-3)", "text-anchor": "middle" }, svg).textContent = T.plan;
+  el("text", { x: L, y: H - 6, "font-size": 10.5, fill: "var(--ink-3)" }, svg).textContent = "−30%";
+  el("text", { x: W - R, y: H - 6, "font-size": 10.5, fill: "var(--ink-3)", "text-anchor": "end" }, svg).textContent = "+30%";
+  el("polyline", { points: pts.map((p) => `${x(p[0])},${y(p[1])}`).join(" "), fill: "none", stroke: "var(--crust)", "stroke-width": 2 }, svg);
+  const cur = evaluate(rs, adj).profit;
+  el("circle", { cx: x(adj), cy: y(cur), r: 5.5, fill: "var(--butter)", stroke: "var(--surface)", "stroke-width": 2 }, svg);
+  pts.forEach(([a, v]) => { const h = el("rect", { x: x(a) - 10, y: 0, width: 20, height: H, fill: "transparent" }, svg); h.onmousemove = (e) => showTip(e, `<b>${a > 0 ? "+" : a < 0 ? "−" : "±"}${Math.abs(a)}%</b><div class="r"><span>${T.k[3]}</span><span>${eur(v)}</span></div>`); h.onmouseleave = hideTip; });
+}
+render();
+</script>
+</body>
+</html>

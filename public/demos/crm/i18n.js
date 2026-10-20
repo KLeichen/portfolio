@@ -1,0 +1,213 @@
+// UI text in Spanish and English. Keys used as @key inside data.js or
+// config.js are translated too, so sample data follows the language toggle.
+window.CRM_I18N = {
+  es: {
+    // navigation and header
+    dashboard: 'Panel', contacts: 'Contactos', companies: 'Empresas', deals: 'Negocios', tasks: 'Tareas',
+    calendar: 'Calendario', reports: 'Reportes', settings: 'Ajustes',
+    search: 'Buscar o ir a…', search_short: 'Buscar', help_weighted: 'Valor de cada etapa × su probabilidad de cierre.', click_move: 'Click para mover el negocio a esta etapa', new: 'Nuevo', notifications: 'Notificaciones', no_notifs: 'Todo al día. No hay pendientes.',
+    reset: 'Restaurar demo', theme: 'Tema', dark: 'Oscuro', light: 'Claro', language: 'Idioma', menu: 'Menú',
+    pal_nav: 'Ir a', pal_actions: 'Acciones', toggle_theme: 'Cambiar tema claro/oscuro', switch_lang: 'Switch to English',
+    closing_week: 'Cierran esta semana',
+
+    // dashboard
+    hello: 'Hola', dash_sub: 'Esto es lo que pasa hoy en tu negocio.',
+    kpi_revenue: 'Ingresos del mes', kpi_pipeline: 'Pipeline abierto', kpi_win: 'Tasa de cierre · 90 días', kpi_contacts: 'Contactos activos',
+    help_revenue: 'Suma de los negocios ganados con fecha de cierre en el mes actual.',
+    help_pipeline: 'Valor de todos los negocios abiertos. Ponderado = valor × probabilidad de la etapa.',
+    help_win: 'Negocios ganados ÷ negocios cerrados (ganados + perdidos) en los últimos 90 días.',
+    help_contacts: 'Contactos con estado Activo o Cliente.',
+    of_goal: 'de la meta', last_month: 'mes anterior', open_n: 'abiertos', weighted: 'ponderado', vs_prev90: 'vs. 90 días previos',
+    pts: 'pts', new_this_month: 'nuevos este mes', created_n: 'Pipeline creado', new_contacts: 'Contactos nuevos',
+    rev_chart: 'Ingresos por mes', won: 'Ganado', forecast: 'Pronóstico', goal: 'Meta', vs_last: 'vs. mes anterior',
+    deals_won: 'Negocios ganados', click_detail: 'Click para ver los negocios', chart_hint: 'Pasá el cursor por el gráfico para ver el detalle de cada mes.',
+    goal_title: 'Meta del mes', remaining: 'Falta', days_left: 'Días restantes', pace: 'Ritmo necesario', per_day: '/día', goal_hit: 'Meta cumplida',
+    closing_deals: 'negocios abiertos cierran este mes', funnel: 'Pipeline por etapa', click_stage: 'Click para verla en el tablero',
+    recent: 'Actividad reciente', upcoming: 'Próximas tareas', top_deals: 'Negocios principales', view_all: 'Ver todo',
+    all: 'Todo', count: 'Cantidad', total: 'Total', avg: 'Promedio', prob: 'Probabilidad',
+
+    // fields
+    name: 'Nombre', email: 'Email', phone: 'Teléfono', company: 'Empresa', title: 'Cargo', status: 'Estado', owner: 'Responsable',
+    source: 'Origen', last_contact: 'Último contacto', created: 'Creado', industry: 'Industria', city: 'Ciudad', size: 'Tamaño',
+    website: 'Sitio web', value: 'Valor', stage: 'Etapa', close_date: 'Fecha de cierre', contact: 'Contacto', due: 'Vence',
+    priority: 'Prioridad', date: 'Fecha', time: 'Hora', type: 'Tipo', deal: 'Negocio', task: 'Tarea',
+    st_lead: 'Lead', st_active: 'Activo', st_customer: 'Cliente', st_inactive: 'Inactivo',
+    high: 'Alta', medium: 'Media', low: 'Baja',
+
+    // contacts
+    contacts_sub: 'Todas las personas con las que trabajás.', search_contacts: 'Buscar contactos…', export: 'Exportar CSV',
+    selected: 'seleccionados', set_status: 'Cambiar estado', assign: 'Asignar a', delete: 'Eliminar', clear: 'Limpiar selección',
+    showing: 'Mostrando', of: 'de', per_page: 'por página', call: 'Llamar', send_email: 'Email', select: 'Seleccionar',
+
+    // companies
+    companies_sub: 'Cuentas y organizaciones.', search_companies: 'Buscar empresas…', sort_by: 'Ordenar', by_revenue: 'Ingresos',
+    by_open: 'Pipeline abierto', by_name: 'Nombre', people: 'Personas', open_short: 'Abiertos', revenue: 'Ingresos',
+    share_rev: 'de los ingresos totales', open_deals: 'Negocios abiertos',
+
+    // deals
+    board: 'Tablero', list: 'Lista', closed_window: 'Cerrados', d30: '30 días', d90: '90 días', all_time: 'Todo',
+    last_n_days: 'Últimos {n} días', closing_month: 'Cierra este mes', days_in_stage: 'Días en la etapa', avg_days_stage: 'Promedio en la etapa',
+    overdue_close: 'La fecha de cierre ya pasó', stale: 'Más de 30 días sin avanzar', search_deals: 'Buscar negocios…',
+    owners_filter: 'Filtrar por responsable', drop_here: 'Soltá un negocio acá', won_toast: '¡Negocio ganado! 🎉', moved: 'Movido a',
+    lost_title: '¿Por qué se perdió?', lost_reason: 'Motivo de pérdida', mark_lost: 'Marcar como perdido', mark_won: 'Ganado',
+    lr_price: 'Precio', lr_competitor: 'Eligió a la competencia', lr_budget: 'Sin presupuesto', lr_timing: 'No era el momento',
+    lr_no_response: 'Dejó de responder', lr_other: 'Otro', deals_count: 'negocios',
+
+    // tasks
+    tasks_sub: 'Seguimientos y pendientes del equipo.', overdue: 'Vencidas', today: 'Hoy', upcoming_t: 'Próximas',
+    completed: 'Completadas', pending: 'Pendientes', add_task_ph: 'Escribí una tarea y presioná Enter…', tomorrow: 'Mañana',
+    next_week: 'En una semana', add: 'Agregar', task_done: 'Tarea completada', no_contact: 'Sin contacto', done: 'Hecha',
+
+    // calendar
+    cal_sub: 'Reuniones, llamadas y vencimientos.', month: 'Mes', agenda: 'Agenda', meeting: 'Reunión', ac_call: 'Llamada',
+    demo: 'Demo', more: 'más', rescheduled: 'Reprogramado para el', click_day: 'Arrastrá los eventos para reprogramarlos o hacé click en un día vacío para crear uno.',
+
+    // reports
+    reports_sub: 'Cómo vienen el equipo y el embudo.', period: 'Período', rep_revenue: 'Ingresos ganados', rep_win: 'Tasa de cierre',
+    rep_avg: 'Ticket promedio', rep_cycle: 'Ciclo de venta', days: 'días', vs_prev: 'vs. período anterior', no_prev: 'Sin período anterior',
+    help_rep_avg: 'Ingresos ganados ÷ cantidad de negocios ganados.', help_rep_cycle: 'Días promedio entre la creación y el cierre de los negocios ganados.',
+    help_rep_win: 'Ganados ÷ cerrados (ganados + perdidos) en el período.', help_rep_revenue: 'Negocios ganados con fecha de cierre dentro del período.',
+    rev_by_owner: 'Ingresos por mes y responsable', toggle_series: 'Click en un nombre para mostrarlo u ocultarlo.',
+    conversion: 'Embudo de conversión', conv_sub: 'Negocios creados en el período', reached: 'Llegaron', conv_from: 'Conversión desde la etapa anterior',
+    dropped: 'Se cayeron', of_total: 'Del total', lost_reasons: 'Motivos de pérdida', by_source: 'Origen de los contactos',
+    heatmap: 'Cuándo trabaja el equipo', heat_sub: 'Actividades por día y hora', act_by_type: 'Actividades por tipo',
+    leaderboard: 'Ranking del equipo', win_rate: 'Tasa de cierre', activities: 'Actividades', open_pipeline: 'Pipeline abierto',
+    no_data: 'Sin datos en este período', activities_n: 'actividades',
+
+    // settings
+    settings_sub: 'Personalizá el CRM para tu negocio. Los cambios se guardan solos.', brand_sec: 'Marca', brand_name: 'Nombre del CRM',
+    biz_name: 'Nombre del negocio', accent: 'Color de acento', custom_color: 'Color personalizado', regional: 'Regional', currency: 'Moneda',
+    target: 'Meta mensual de ingresos', pipeline_sec: 'Etapas del pipeline', team: 'Equipo', data_sec: 'Datos',
+    data_note: 'Los datos de esta demo se guardan solo en tu navegador. Podés exportarlos o importar los de un cliente.',
+    export_json: 'Exportar JSON', import_json: 'Importar JSON', imported: 'Datos importados', import_err: 'El archivo no tiene un formato válido',
+    saved: 'Cambios guardados', reset_q: '¿Restaurar los datos de demo? Se pierden los cambios hechos.', config_hint: 'Las etapas y el equipo se editan en config.js.',
+    confirm: 'Confirmar',
+
+    // forms, toasts, drawer
+    new_contact: 'Nuevo contacto', new_company: 'Nueva empresa', new_deal: 'Nuevo negocio', new_task: 'Nueva tarea', new_event: 'Nuevo evento',
+    edit: 'Editar', cancel: 'Cancelar', save: 'Guardar', deleted: 'Eliminado', created_toast: 'Creado', undo: 'Deshacer', undone: 'Cambio deshecho',
+    details: 'Detalles', activity: 'Actividad', add_note: 'Escribí una nota, llamada o email…', log: 'Registrar', open_tasks: 'Tareas abiertas',
+    deals_n: 'Negocios', back: 'Volver', last_touch: 'Último contacto', month_detail: 'Negocios ganados en el mes', no_items: 'Nada por acá',
+    no_results: 'Sin resultados', close: 'Cerrar',
+    ac_email: 'Email', ac_meeting: 'Reunión', ac_note: 'Nota', ac_deal: 'Negocio',
+
+    // sample data
+    src_web: 'Web', src_referral: 'Referido', src_linkedin: 'LinkedIn', src_event: 'Evento', src_email: 'Email', src_call: 'Llamada en frío',
+    ind_software: 'Software', ind_agro: 'Agro', ind_health: 'Salud', ind_logistics: 'Logística', ind_tourism: 'Turismo', ind_finance: 'Finanzas',
+    ind_education: 'Educación', ind_retail: 'Retail', ind_food: 'Alimentos', ind_auto: 'Automotriz',
+    jt_ceo: 'CEO', jt_cfo: 'CFO', jt_buyer: 'Gerente de Compras', jt_data: 'Head of Data', jt_sales: 'Gerente Comercial', jt_coo: 'COO',
+    jt_mkt: 'Responsable de Marketing', jt_cto: 'CTO', jt_analyst: 'Analista Senior',
+    p_license: 'Licencia anual', p_impl: 'Implementación', p_consult: 'Consultoría', p_dash: 'Dashboard a medida', p_renewal: 'Renovación',
+    p_migration: 'Migración de datos', p_pro: 'Plan Pro', p_training: 'Capacitación', p_api: 'Integración API', p_support: 'Soporte premium',
+    p_model: 'Modelo predictivo', p_audit: 'Auditoría de datos',
+    tk_follow: 'Llamar para seguimiento', tk_proposal: 'Enviar propuesta', tk_demo: 'Preparar demo', tk_contract: 'Revisar contrato',
+    tk_meeting: 'Agendar reunión', tk_invoice: 'Enviar factura', tk_update: 'Actualizar datos del cliente', tk_reply: 'Responder consulta',
+    tk_refs: 'Pedir referencias', tk_onboard: 'Onboarding',
+    ev_meeting: 'Reunión', ev_kickoff: 'Kickoff', ev_review: 'Revisión', ev_lunch: 'Almuerzo', ev_call: 'Llamada', ev_followup: 'Seguimiento', ev_demo: 'Demo',
+    a_call1: 'Llamada de descubrimiento', a_call2: 'Seguimiento telefónico', a_call3: 'Llamada de cierre',
+    a_email1: 'Envió la propuesta', a_email2: 'Respondió con dudas de precio', a_email3: 'Confirmó la reunión',
+    a_meet1: 'Demo del producto', a_meet2: 'Reunión de kickoff', a_meet3: 'Revisión trimestral',
+    a_note1: 'Prefiere contacto por WhatsApp', a_note2: 'Está evaluando a un competidor', a_note3: 'Presupuesto aprobado para el próximo trimestre',
+    a_deal1: 'Avanzó a Propuesta', a_deal2: 'Avanzó a Negociación', a_deal3: 'Negocio ganado',
+    tag_vip: 'VIP', tag_news: 'Newsletter',
+  },
+
+  en: {
+    dashboard: 'Dashboard', contacts: 'Contacts', companies: 'Companies', deals: 'Deals', tasks: 'Tasks',
+    calendar: 'Calendar', reports: 'Reports', settings: 'Settings',
+    search: 'Search or jump to…', search_short: 'Search', help_weighted: 'Each stage value × its close probability.', click_move: 'Click to move the deal to this stage', new: 'New', notifications: 'Notifications', no_notifs: "You're all caught up.",
+    reset: 'Reset demo', theme: 'Theme', dark: 'Dark', light: 'Light', language: 'Language', menu: 'Menu',
+    pal_nav: 'Go to', pal_actions: 'Actions', toggle_theme: 'Toggle light/dark theme', switch_lang: 'Cambiar a español',
+    closing_week: 'Closing this week',
+
+    hello: 'Hi', dash_sub: "Here's what's happening in your business today.",
+    kpi_revenue: 'Revenue this month', kpi_pipeline: 'Open pipeline', kpi_win: 'Win rate · 90 days', kpi_contacts: 'Active contacts',
+    help_revenue: 'Sum of won deals with a close date in the current month.',
+    help_pipeline: 'Value of all open deals. Weighted = value × stage probability.',
+    help_win: 'Won deals ÷ closed deals (won + lost) in the last 90 days.',
+    help_contacts: 'Contacts with status Active or Customer.',
+    of_goal: 'of goal', last_month: 'last month', open_n: 'open', weighted: 'weighted', vs_prev90: 'vs. previous 90 days',
+    pts: 'pts', new_this_month: 'new this month', created_n: 'Pipeline created', new_contacts: 'New contacts',
+    rev_chart: 'Revenue by month', won: 'Won', forecast: 'Forecast', goal: 'Goal', vs_last: 'vs. last month',
+    deals_won: 'Deals won', click_detail: 'Click to see the deals', chart_hint: 'Hover over the chart to see each month in detail.',
+    goal_title: 'Monthly goal', remaining: 'Remaining', days_left: 'Days left', pace: 'Required pace', per_day: '/day', goal_hit: 'Goal reached',
+    closing_deals: 'open deals close this month', funnel: 'Pipeline by stage', click_stage: 'Click to see it on the board',
+    recent: 'Recent activity', upcoming: 'Upcoming tasks', top_deals: 'Top deals', view_all: 'View all',
+    all: 'All', count: 'Count', total: 'Total', avg: 'Average', prob: 'Probability',
+
+    name: 'Name', email: 'Email', phone: 'Phone', company: 'Company', title: 'Title', status: 'Status', owner: 'Owner',
+    source: 'Source', last_contact: 'Last contact', created: 'Created', industry: 'Industry', city: 'City', size: 'Size',
+    website: 'Website', value: 'Value', stage: 'Stage', close_date: 'Close date', contact: 'Contact', due: 'Due',
+    priority: 'Priority', date: 'Date', time: 'Time', type: 'Type', deal: 'Deal', task: 'Task',
+    st_lead: 'Lead', st_active: 'Active', st_customer: 'Customer', st_inactive: 'Inactive',
+    high: 'High', medium: 'Medium', low: 'Low',
+
+    contacts_sub: 'Everyone you work with.', search_contacts: 'Search contacts…', export: 'Export CSV',
+    selected: 'selected', set_status: 'Set status', assign: 'Assign to', delete: 'Delete', clear: 'Clear selection',
+    showing: 'Showing', of: 'of', per_page: 'per page', call: 'Call', send_email: 'Email', select: 'Select',
+
+    companies_sub: 'Accounts and organizations.', search_companies: 'Search companies…', sort_by: 'Sort', by_revenue: 'Revenue',
+    by_open: 'Open pipeline', by_name: 'Name', people: 'People', open_short: 'Open', revenue: 'Revenue',
+    share_rev: 'of total revenue', open_deals: 'Open deals',
+
+    board: 'Board', list: 'List', closed_window: 'Closed', d30: '30 days', d90: '90 days', all_time: 'All time',
+    last_n_days: 'Last {n} days', closing_month: 'Closing this month', days_in_stage: 'Days in stage', avg_days_stage: 'Average time in stage',
+    overdue_close: 'Close date has passed', stale: 'No movement in over 30 days', search_deals: 'Search deals…',
+    owners_filter: 'Filter by owner', drop_here: 'Drop a deal here', won_toast: 'Deal won! 🎉', moved: 'Moved to',
+    lost_title: 'Why was it lost?', lost_reason: 'Loss reason', mark_lost: 'Mark as lost', mark_won: 'Won',
+    lr_price: 'Price', lr_competitor: 'Chose a competitor', lr_budget: 'No budget', lr_timing: 'Bad timing',
+    lr_no_response: 'Stopped responding', lr_other: 'Other', deals_count: 'deals',
+
+    tasks_sub: 'Follow-ups and to-dos for the team.', overdue: 'Overdue', today: 'Today', upcoming_t: 'Upcoming',
+    completed: 'Completed', pending: 'Pending', add_task_ph: 'Type a task and press Enter…', tomorrow: 'Tomorrow',
+    next_week: 'In a week', add: 'Add', task_done: 'Task completed', no_contact: 'No contact', done: 'Done',
+
+    cal_sub: 'Meetings, calls and due dates.', month: 'Month', agenda: 'Agenda', meeting: 'Meeting', ac_call: 'Call',
+    demo: 'Demo', more: 'more', rescheduled: 'Rescheduled to', click_day: 'Drag events to reschedule them, or click an empty day to create one.',
+
+    reports_sub: 'How the team and the funnel are doing.', period: 'Period', rep_revenue: 'Won revenue', rep_win: 'Win rate',
+    rep_avg: 'Average deal', rep_cycle: 'Sales cycle', days: 'days', vs_prev: 'vs. previous period', no_prev: 'No previous period',
+    help_rep_avg: 'Won revenue ÷ number of won deals.', help_rep_cycle: 'Average days from creation to close for won deals.',
+    help_rep_win: 'Won ÷ closed (won + lost) in the period.', help_rep_revenue: 'Won deals with a close date inside the period.',
+    rev_by_owner: 'Revenue by month and owner', toggle_series: 'Click a name to show or hide it.',
+    conversion: 'Conversion funnel', conv_sub: 'Deals created in the period', reached: 'Reached', conv_from: 'Conversion from previous stage',
+    dropped: 'Dropped', of_total: 'Of total', lost_reasons: 'Loss reasons', by_source: 'Contact sources',
+    heatmap: 'When the team works', heat_sub: 'Activities by day and hour', act_by_type: 'Activities by type',
+    leaderboard: 'Team leaderboard', win_rate: 'Win rate', activities: 'Activities', open_pipeline: 'Open pipeline',
+    no_data: 'No data in this period', activities_n: 'activities',
+
+    settings_sub: 'Make the CRM your own. Changes save automatically.', brand_sec: 'Brand', brand_name: 'CRM name',
+    biz_name: 'Business name', accent: 'Accent color', custom_color: 'Custom color', regional: 'Regional', currency: 'Currency',
+    target: 'Monthly revenue goal', pipeline_sec: 'Pipeline stages', team: 'Team', data_sec: 'Data',
+    data_note: "Demo data is stored only in your browser. You can export it or import a client's data.",
+    export_json: 'Export JSON', import_json: 'Import JSON', imported: 'Data imported', import_err: "The file isn't in a valid format",
+    saved: 'Changes saved', reset_q: 'Reset the demo data? Your changes will be lost.', config_hint: 'Stages and team are edited in config.js.',
+    confirm: 'Confirm',
+
+    new_contact: 'New contact', new_company: 'New company', new_deal: 'New deal', new_task: 'New task', new_event: 'New event',
+    edit: 'Edit', cancel: 'Cancel', save: 'Save', deleted: 'Deleted', created_toast: 'Created', undo: 'Undo', undone: 'Change undone',
+    details: 'Details', activity: 'Activity', add_note: 'Write a note, call or email…', log: 'Log', open_tasks: 'Open tasks',
+    deals_n: 'Deals', back: 'Back', last_touch: 'Last contact', month_detail: 'Deals won in the month', no_items: 'Nothing here',
+    no_results: 'No results', close: 'Close',
+    ac_email: 'Email', ac_meeting: 'Meeting', ac_note: 'Note', ac_deal: 'Deal',
+
+    src_web: 'Website', src_referral: 'Referral', src_linkedin: 'LinkedIn', src_event: 'Event', src_email: 'Email', src_call: 'Cold call',
+    ind_software: 'Software', ind_agro: 'Agriculture', ind_health: 'Healthcare', ind_logistics: 'Logistics', ind_tourism: 'Tourism', ind_finance: 'Finance',
+    ind_education: 'Education', ind_retail: 'Retail', ind_food: 'Food', ind_auto: 'Automotive',
+    jt_ceo: 'CEO', jt_cfo: 'CFO', jt_buyer: 'Purchasing Manager', jt_data: 'Head of Data', jt_sales: 'Sales Manager', jt_coo: 'COO',
+    jt_mkt: 'Marketing Lead', jt_cto: 'CTO', jt_analyst: 'Senior Analyst',
+    p_license: 'Annual license', p_impl: 'Implementation', p_consult: 'Consulting', p_dash: 'Custom dashboard', p_renewal: 'Renewal',
+    p_migration: 'Data migration', p_pro: 'Pro plan', p_training: 'Training', p_api: 'API integration', p_support: 'Premium support',
+    p_model: 'Predictive model', p_audit: 'Data audit',
+    tk_follow: 'Follow-up call', tk_proposal: 'Send proposal', tk_demo: 'Prepare demo', tk_contract: 'Review contract',
+    tk_meeting: 'Schedule meeting', tk_invoice: 'Send invoice', tk_update: 'Update client details', tk_reply: 'Answer inquiry',
+    tk_refs: 'Ask for referrals', tk_onboard: 'Onboarding',
+    ev_meeting: 'Meeting', ev_kickoff: 'Kickoff', ev_review: 'Review', ev_lunch: 'Lunch', ev_call: 'Call', ev_followup: 'Follow-up', ev_demo: 'Demo',
+    a_call1: 'Discovery call', a_call2: 'Follow-up call', a_call3: 'Closing call',
+    a_email1: 'Sent the proposal', a_email2: 'Replied with pricing questions', a_email3: 'Confirmed the meeting',
+    a_meet1: 'Product demo', a_meet2: 'Kickoff meeting', a_meet3: 'Quarterly review',
+    a_note1: 'Prefers WhatsApp', a_note2: 'Evaluating a competitor', a_note3: 'Budget approved for next quarter',
+    a_deal1: 'Moved to Proposal', a_deal2: 'Moved to Negotiation', a_deal3: 'Deal won',
+    tag_vip: 'VIP', tag_news: 'Newsletter',
+  },
+};

@@ -4,7 +4,7 @@ summary: Un grupo de cuatro clínicas perdía 1 de cada 5 turnos por ausencias. 
 lang: es
 page: northgate-ausencias
 date: 2026-10-08
-cover: /projects/northgate/drivers.png
+cover: /projects/northgate/drivers-es.png
 tools: [Python, pandas, scikit-learn, matplotlib, Jupyter]
 embed: /projects/northgate/planner.html
 simulated: true
@@ -23,9 +23,10 @@ Northgate, un grupo de cuatro clínicas veterinarias, sentía que muchos cliente
 - **Modelo predictivo:** regresión logística validada en el tiempo (entrenada con meses anteriores, evaluada en los 6 siguientes), sin filtrar información del futuro.
 - **Simulación de políticas:** comparé llamadas, distintas reglas de seña y combinaciones, con supuestos explícitos y un escenario conservador.
 
-![Qué explica las ausencias](/projects/northgate/drivers.png)
+![Qué explica las ausencias](/projects/northgate/drivers-es.png)
+*Tasa de ausencias según cada factor. La línea punteada es el promedio (18,5%).*
 
 ## Resultado
 Recomendé combinar las dos palancas: **seña en controles y peluquería** (nunca en consultas por enfermedad) y **las 40 llamadas ordenadas por el modelo**. Eso evita unas 6 a 10 ausencias por semana. Descarté una regla de seña por puntaje de riesgo porque castigaba a quienes viven lejos.
 
-Más abajo podés probar la herramienta interactiva que dejé para que el equipo ajuste las políticas.
+También dejé una herramienta interactiva para que el equipo pruebe las políticas (botón de arriba).

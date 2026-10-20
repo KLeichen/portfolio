@@ -24,18 +24,12 @@ const { Content } = await render(entry);
     <div class="chips">{p.tools.map((tool) => <span class="chip">{tool}</span>)}</div>
     <div class="links">
       {p.github && <a class="btn btn-ghost" href={p.github} target="_blank" rel="noopener">{t(lang, 'project.code')}</a>}
+      {p.embed && <a class="btn btn-ghost" href={p.embed} target="_blank" rel="noopener">{t(lang, 'project.tool')}</a>}
       {p.report && <a class="btn btn-ghost" href={p.report} target="_blank" rel="noopener">{t(lang, 'project.report')}</a>}
     </div>
   </div>
 
   <div class="content"><Content /></div>
-
-  {p.embed && (
-    <div class="embed">
-      <h2>{t(lang, 'project.tool')}</h2>
-      <iframe src={p.embed} title={p.title} loading="lazy"></iframe>
-    </div>
-  )}
 
   {p.simulated && <p class="note">{t(lang, 'project.simulated')}</p>}
 </article>
@@ -56,9 +50,7 @@ const { Content } = await render(entry);
   .content { font-size: 1.08rem; }
   .content :global(h2) { font-size: 1.5rem; margin: 40px 0 12px; }
   .content :global(p), .content :global(li) { color: #c5d1db; }
-  .content :global(img) { border-radius: var(--radius); background: #fff; margin: 24px 0; border: 1px solid var(--border); }
+  .content :global(img) { border-radius: var(--radius); background: var(--surface); margin: 24px 0; border: 1px solid var(--border); }
   .content :global(strong) { color: var(--text); }
-  .embed h2 { font-size: 1.5rem; margin: 48px 0 16px; }
-  .embed iframe { width: 100%; height: 820px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
   .note { margin-top: 48px; color: var(--muted); font-size: .9rem; font-style: italic; }
 </style>

@@ -196,8 +196,8 @@ const timeline = [
 
   .project { overflow: hidden; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; }
   .project:hover { border-color: var(--accent); transform: translateY(-4px); }
-  .cover { position: relative; aspect-ratio: 16 / 10; background: #fff; }
-  .cover img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+  .cover { position: relative; aspect-ratio: 16 / 10; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .cover img { width: 100%; height: 100%; object-fit: contain; }
   .overlay { position: absolute; inset: 0; background: rgba(17, 26, 34, .7); display: grid; place-items: center; opacity: 0; transition: opacity .2s; }
   .project:hover .overlay, .project:focus-visible .overlay { opacity: 1; }
   .body { padding: 24px; }

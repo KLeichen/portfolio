@@ -1,9 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { t, contact, projectPath, type Lang } from '../i18n/ui';
-import { themes, fallbackTheme, heroMetrics, process, processFns, toolGroups, career, copy, sources, heroSources, focusValues } from '../data/showcase';
-import runsData from '../data/runs.json';
-import { chartSvg, fitFor, fmtPace, type Run } from '../lib/runchart';
+import { themes, fallbackTheme, heroMetrics, process, processFns, toolGroups, career, copy } from '../data/showcase';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -14,22 +12,6 @@ const projects = (await getCollection('projects', (p) => p.data.lang === lang))
 const byPage = new Map(projects.map((p) => [p.data.page, p]));
 const theme = (page: string) => themes[page] ?? fallbackTheme;
 const metrics = heroMetrics.filter((m) => byPage.has(m.page));
-const srcOf = (page: string, i: number) => sources[page]?.[i]?.[lang];
-const tagsOf = (page: string) => theme(page).tags.join(' ');
-
-// Fig. 3: own running data. Every number in the copy is computed here from runs.json.
-const runs = runsData as Run[];
-const runKm = runs.reduce((s, r) => s + r.km, 0);
-const byDate = fitFor(runs, 'date');
-const firstDay = 0, lastDay = (Date.parse(runs[runs.length - 1].date) - Date.parse('2026-03-01')) / 86400000;
-const paceStart = byDate.a + byDate.b * firstDay, paceEnd = byDate.a + byDate.b * lastDay;
-const byTemp = fitFor(runs, 'temp');
-const byKm = fitFor(runs, 'km');
-const runStats = {
-  date: { b: byDate.b * 30, r: byDate.r, n: byDate.n },
-  temp: { b: byTemp.b, r: byTemp.r, n: byTemp.n },
-  km: { b: byKm.b, r: byKm.r, n: byKm.n },
-};
 
 // Tools × cases matrix, from the projects' own frontmatter.
 const norm = (s: string) => s.toLowerCase();
@@ -74,9 +56,7 @@ kevin = <span class="fn">DataScientist</span>(
     city=<span class="str">"Buenos Aires"</span>,
     status=<span class="str">"{c.status}"</span>,
 )
-</code><span class="run-line"><label class="sr-only" for="run-input">{c.runLabel}</label><input id="run-input" class="run-input" value='kevin.summary(focus="all")' spellcheck="false" autocomplete="off" autocapitalize="off" /><button class="run-btn" type="button" title="Shift + Enter">▶ {c.run}</button></span></pre>
-        <p class="try">{c.tryLabel} {focusValues.slice(1).map((f) => <button type="button" class="try-chip" data-focus={f}>focus="{f}"</button>)}<button type="button" class="try-chip" data-lang={lang === 'es' ? 'en' : 'es'}>lang="{lang === 'es' ? 'en' : 'es'}"</button></p>
-        <pre class="stdout" aria-live="polite" data-lang={lang} data-alt={lang === 'es' ? '/en/' : '/'}></pre>
+kevin.<span class="fn">summary</span>()</code></pre>
       </div>
       <div class="cell-out">
         <span class="prompt out">Out[1]:</span>
@@ -114,8 +94,7 @@ kevin = <span class="fn">DataScientist</span>(
             const p = byPage.get(m.page)!;
             return (
               <a class="row" href={projectPath(lang, m.page)} style={`--c:${th.accent};--b:${m.before}%;--a:${m.after}%;--i:${i}`}
-                data-title={p.data.title} data-before={m.beforeLabel[lang]} data-after={m.afterLabel[lang]} data-detail={m.detail[lang]}
-                data-src={heroSources[m.page]?.[lang] ?? ''} data-tags={tagsOf(m.page)}>
+                data-title={p.data.title} data-before={m.beforeLabel[lang]} data-after={m.afterLabel[lang]} data-detail={m.detail[lang]}>
                 <span class="row-label"><span class="row-field">{th.short[lang]}</span>{m.label[lang]}</span>
                 <span class="track">
                   <span class="span"></span>
@@ -132,7 +111,6 @@ kevin = <span class="fn">DataScientist</span>(
           <div class="tt-title">{byPage.get(metrics[0].page)!.data.title}</div>
           <div class="tt-ba"><span class="tt-before">{metrics[0].beforeLabel[lang]}</span><span class="tt-after">{metrics[0].afterLabel[lang]}</span></div>
           <div class="tt-detail">{metrics[0].detail[lang]}</div>
-          <div class="tt-src"><span>{c.src}</span> <code>{heroSources[metrics[0].page]?.[lang]}</code></div>
         </div>
       </figure>
     )}
@@ -159,7 +137,7 @@ kevin = <span class="fn">DataScientist</span>(
           const th = theme(p.data.page);
           const h = p.data.highlights[0];
           return (
-            <a class:list={['df-row', { on: i === 0 }]} role="row" href={projectPath(lang, p.data.page)} data-i={i} data-tags={tagsOf(p.data.page)} style={`--c:${th.accent}`}>
+            <a class:list={['df-row', { on: i === 0 }]} role="row" href={projectPath(lang, p.data.page)} data-i={i} style={`--c:${th.accent}`}>
               <span role="cell" class="idx">{i}</span>
               <span role="cell" class="df-case">{p.data.title}</span>
               <span role="cell" class="df-field">{th.field[lang]}</span>
@@ -181,7 +159,7 @@ kevin = <span class="fn">DataScientist</span>(
                 <h3>{p.data.title}</h3>
                 <p class="pv-sum">{p.data.summary}</p>
                 <dl class="kpis">
-                  {p.data.highlights.slice(0, 3).map((h, k) => <div><dt data-src={srcOf(p.data.page, k) ? `${c.src} ${srcOf(p.data.page, k)}` : undefined}>{h.value}</dt><dd>{h.label}</dd></div>)}
+                  {p.data.highlights.slice(0, 3).map((h) => <div><dt>{h.value}</dt><dd>{h.label}</dd></div>)}
                 </dl>
                 <div class="pv-foot">
                   <div class="chips">{p.data.tools.slice(0, 5).map((tool) => <span class="chip">{tool}</span>)}</div>
@@ -264,35 +242,6 @@ kevin = <span class="fn">DataScientist</span>(
 </section>
 
 <!-- ===== About + gantt ===== -->
-<section id="running" class="alt">
-  <div class="container">
-    <header class="sec">
-      <span class="prompt">In&nbsp;[5]:</span>
-      <code class="sec-code">smf.<span class="fn">ols</span>(<span class="str">"pace ~ <span class="rc-mode-label">date</span>"</span>, runs).<span class="fn">fit</span>()</code>
-      <h2>{c.runsTitle}</h2>
-      <p>{c.runsSub(runs.length, Math.round(runKm))}</p>
-    </header>
-    <div class="runs-grid">
-      <figure class="fig runs" data-lang={lang}>
-        <figcaption>
-          <span class="fig-title">{c.fig3}</span>
-          <span class="rc-modes" role="group" aria-label={c.runsAxis}>
-            {(['date', 'temp', 'km'] as const).map((m) => <button type="button" class:list={['rc-mode', { on: m === 'date' }]} data-mode={m}>{c.runsModes[m]}</button>)}
-          </span>
-        </figcaption>
-        <div class="rc-plot" set:html={chartSvg(runs, 'date', lang)}></div>
-        <div class="rc-tip" hidden></div>
-        <p class="rc-stat" data-stats={JSON.stringify(runStats)}>{c.runsStat('date', runStats.date)}</p>
-      </figure>
-      <ul class="findings">
-        <li><b>{fmtPace(paceStart)} → {fmtPace(paceEnd)} /km</b><span>{c.runsF1(Math.abs(runStats.date.b))}</span></li>
-        <li><b>r = {runStats.temp.r.toFixed(2)}</b><span>{c.runsF2(runStats.temp.n)}</span></li>
-        <li><b>r = {runStats.km.r.toFixed(2)}</b><span>{c.runsF3}</span></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
 <section id="about">
   <div class="container about-grid">
     <div class="portrait">
@@ -300,7 +249,7 @@ kevin = <span class="fn">DataScientist</span>(
     </div>
     <div class="about-copy">
       <header class="sec">
-        <span class="prompt">In&nbsp;[6]:</span>
+        <span class="prompt">In&nbsp;[5]:</span>
         <code class="sec-code">kevin.<span class="fn">describe</span>()</code>
         <h2>{c.aboutTitle}</h2>
       </header>
@@ -346,7 +295,7 @@ kevin = <span class="fn">DataScientist</span>(
   <div class="container contact-grid">
     <div>
       <header class="sec">
-        <span class="prompt">In&nbsp;[7]:</span>
+        <span class="prompt">In&nbsp;[6]:</span>
         <code class="sec-code">kevin.<span class="fn">contact</span>()</code>
         <h2>{c.contactTitle}</h2>
         <p>{c.contactSub}</p>
@@ -372,10 +321,6 @@ kevin = <span class="fn">DataScientist</span>(
 </section>
 
 <script>
-  import { copy, focusValues } from '../data/showcase';
-  import { chartSvg, type Run, type Mode } from '../lib/runchart';
-  import runsData from '../data/runs.json';
-
   // Contact form
   const form = document.getElementById('contact-form') as HTMLFormElement;
   const status = form.querySelector('.fstatus') as HTMLElement;
@@ -410,7 +355,7 @@ kevin = <span class="fn">DataScientist</span>(
     const set = (sel: string, text: string) => { (panel.querySelector(sel) as HTMLElement).textContent = text; };
     const show = (row: HTMLElement) => {
       const d = row.dataset;
-      set('.tt-title', d.title!); set('.tt-before', d.before!); set('.tt-after', d.after!); set('.tt-detail', d.detail!); set('.tt-src code', d.src!);
+      set('.tt-title', d.title!); set('.tt-before', d.before!); set('.tt-after', d.after!); set('.tt-detail', d.detail!);
       panel.style.setProperty('--c', getComputedStyle(row).getPropertyValue('--c'));
       chart.classList.add('focus');
       chart.querySelectorAll('.row').forEach((r) => r.classList.toggle('on', r === row));
@@ -422,95 +367,13 @@ kevin = <span class="fn">DataScientist</span>(
     chart.addEventListener('mouseleave', () => chart.classList.remove('focus'));
   }
 
-  // In [1]: a cell visitors can edit and run. It filters Fig. 1 and the cases table.
-  const stdout = document.querySelector('.stdout') as HTMLElement | null;
-  const input = document.getElementById('run-input') as HTMLInputElement | null;
-  if (stdout && input) {
-    const lang = stdout.dataset.lang as 'es' | 'en';
-    const o = copy[lang].out;
-    const dfRows = [...document.querySelectorAll<HTMLElement>('.df-row')];
-    const figRows = [...document.querySelectorAll<HTMLElement>('.chart .row')];
-    const say = (text: string, err = false) => { stdout.textContent = text; stdout.classList.toggle('err', err); };
-    const run = () => {
-      const src = input.value.trim();
-      const call = src.match(/^kevin\.(\w+)\((.*)\)\s*;?$/s);
-      if (!call) return say('SyntaxError: invalid syntax', true);
-      if (call[1] !== 'summary') return say(`AttributeError: 'DataScientist' object has no attribute '${call[1]}'`, true);
-      const args: Record<string, string> = {};
-      const body = call[2].trim();
-      if (body) {
-        for (const part of body.split(',')) {
-          const name = part.trim().match(/^(\w+)\s*=/);
-          if (name && name[1] !== 'focus' && name[1] !== 'lang') return say(`TypeError: summary() got an unexpected keyword argument '${name[1]}'`, true);
-          const kv = part.trim().match(/^(\w+)\s*=\s*["']([^"']*)["']$/);
-          if (!kv) return say('SyntaxError: invalid syntax', true);
-          args[kv[1]] = kv[2].toLowerCase();
-        }
-      }
-      if (args.lang) {
-        if (args.lang !== 'es' && args.lang !== 'en') return say(o.badLang(args.lang), true);
-        if (args.lang !== lang) { say(o.switching); location.href = stdout.dataset.alt!; return; }
-      }
-      const focus = args.focus ?? 'all';
-      if (!focusValues.includes(focus)) return say(o.badFocus(focus, focusValues.map((f) => `"${f}"`).join(', ')), true);
-      const match = (el: HTMLElement) => focus === 'all' || el.dataset.tags!.split(' ').includes(focus);
-      const hits = dfRows.filter(match);
-      dfRows.forEach((r) => (r.hidden = !match(r)));
-      figRows.forEach((r) => r.classList.toggle('off', !match(r)));
-      if (hits[0]) pick(hits[0].dataset.i!);
-      if (!hits.length) return say(o.none(focus));
-      const w = Math.max(...hits.map((r) => r.querySelector('.df-case')!.textContent!.length));
-      say([o.header(hits.length, focus), ...hits.map((r) =>
-        `  ${r.dataset.i}  ${r.querySelector('.df-case')!.textContent!.padEnd(w)}  ${r.querySelector('.df-result')!.textContent!.trim()}`)].join('\n'));
-    };
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); run(); } });
-    document.querySelector('.run-btn')!.addEventListener('click', run);
-    document.querySelectorAll<HTMLButtonElement>('.try-chip').forEach((b) => b.addEventListener('click', () => {
-      input.value = b.dataset.lang ? `kevin.summary(lang="${b.dataset.lang}")` : `kevin.summary(focus="${b.dataset.focus}")`;
-      run();
-    }));
-    run();
-  }
-
-  // Fig. 3: switch the x axis; hover a dot for that run.
-  const runsFig = document.querySelector('.runs') as HTMLElement | null;
-  if (runsFig) {
-    const lang = runsFig.dataset.lang as 'es' | 'en';
-    const plot = runsFig.querySelector('.rc-plot') as HTMLElement;
-    const tip = runsFig.querySelector('.rc-tip') as HTMLElement;
-    const stat = runsFig.querySelector('.rc-stat') as HTMLElement;
-    const stats = JSON.parse(stat.dataset.stats!);
-    const label = document.querySelector('.rc-mode-label') as HTMLElement;
-    runsFig.querySelectorAll<HTMLButtonElement>('.rc-mode').forEach((b) => b.addEventListener('click', () => {
-      const mode = b.dataset.mode as Mode;
-      plot.innerHTML = chartSvg(runsData as Run[], mode, lang);
-      stat.textContent = copy[lang].runsStat(mode, stats[mode]);
-      label.textContent = mode;
-      runsFig.querySelectorAll('.rc-mode').forEach((x) => x.classList.toggle('on', x === b));
-      tip.hidden = true;
-    }));
-    const show = (e: Event) => {
-      const dot = e.target as SVGElement;
-      if (!dot.classList?.contains('rc-dot')) return;
-      tip.textContent = dot.dataset.tip!;
-      const fr = runsFig.getBoundingClientRect(), dr = dot.getBoundingClientRect();
-      tip.hidden = false;
-      const tw = tip.offsetWidth, th = tip.offsetHeight;
-      tip.style.left = `${Math.min(fr.width - tw - 8, Math.max(8, dr.left - fr.left + dr.width / 2 - tw / 2))}px`;
-      tip.style.top = `${dr.top - fr.top - th - 8}px`;
-    };
-    plot.addEventListener('mouseover', show);
-    plot.addEventListener('focusin', show);
-    plot.addEventListener('mouseleave', () => (tip.hidden = true));
-  }
-
   // Cases dataframe: hovering a row swaps the preview card.
   const rows = [...document.querySelectorAll<HTMLElement>('.df-row')];
   const pvs = [...document.querySelectorAll<HTMLElement>('.pv')];
-  function pick(i: string) {
-    document.querySelectorAll<HTMLElement>('.df-row').forEach((r) => r.classList.toggle('on', r.dataset.i === i));
-    document.querySelectorAll<HTMLElement>('.pv').forEach((p) => p.classList.toggle('on', p.dataset.i === i));
-  }
+  const pick = (i: string) => {
+    rows.forEach((r) => r.classList.toggle('on', r.dataset.i === i));
+    pvs.forEach((p) => p.classList.toggle('on', p.dataset.i === i));
+  };
   rows.forEach((r) => {
     r.addEventListener('mouseenter', () => pick(r.dataset.i!));
     r.addEventListener('focus', () => pick(r.dataset.i!));
@@ -588,67 +451,6 @@ kevin = <span class="fn">DataScientist</span>(
   .tt-after { color: var(--c); }
   .tt-after::before { content: '● '; }
   .tt-detail { margin-top: 6px; color: var(--muted); }
-
-  /* ---------- Runnable cell ---------- */
-  .run-line { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
-  .run-input {
-    flex: 1; min-width: 0; font: inherit; color: var(--text); background: rgba(79, 209, 197, .07);
-    border: 1px dashed rgba(79, 209, 197, .45); border-radius: var(--r-sm); padding: 2px 8px; margin-left: -9px;
-    transition: border-color var(--m-out), background-color var(--m-out);
-  }
-  .run-input:hover { border-color: var(--accent); }
-  .run-input:focus { outline: none; border-style: solid; border-color: var(--accent); background: rgba(79, 209, 197, .12); }
-  .run-btn {
-    font: 500 .78rem var(--mono); color: var(--accent-ink); background: var(--accent); border: 0; border-radius: var(--r-sm);
-    padding: 5px 10px; cursor: pointer; transition: transform var(--m-out) var(--ease);
-  }
-  @media (hover: hover) { .run-btn:hover { transform: translateY(-1px); } }
-  .run-btn:active { transform: translateY(1px) scale(.985); }
-  .try { margin: 2px 0 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font: .74rem var(--mono); color: var(--faint); }
-  .try-chip {
-    font: inherit; color: var(--muted); background: transparent; border: 1px solid var(--border-soft); border-radius: 999px;
-    padding: 2px 9px; cursor: pointer; transition: color var(--m-out), border-color var(--m-out);
-  }
-  .try-chip:hover { color: var(--accent); border-color: var(--accent); }
-  .stdout {
-    margin: 0; min-height: 3.2em; padding: 8px 14px; font: .78rem/1.55 var(--mono); color: var(--muted);
-    border-left: 3px solid var(--border); white-space: pre; overflow-x: auto;
-  }
-  .stdout:empty { display: none; }
-  .stdout.err { color: #ff8a7a; border-left-color: #ff8a7a; }
-  .chart .row.off { opacity: .25; }
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .tt-src { margin-top: 8px; font-size: .72rem; color: var(--faint); }
-  .tt-src code { font-family: var(--mono); color: var(--muted); }
-  .kpis dt[data-src] { position: relative; text-decoration: underline dotted color-mix(in srgb, var(--c) 60%, transparent); text-underline-offset: 4px; cursor: help; }
-  .kpis dt[data-src]::after {
-    content: attr(data-src); position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 3; width: max-content; max-width: 340px;
-    white-space: normal; font: 400 .72rem/1.4 var(--mono); color: var(--text); background: #0b1116; border: 1px solid var(--border);
-    padding: 6px 9px; border-radius: var(--r-sm); opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .14s, transform .14s;
-  }
-  .kpis dt[data-src]:hover::after { opacity: 1; transform: none; }
-
-  /* ---------- Fig. 3: running ---------- */
-  .runs-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 28px; align-items: start; }
-  .runs { position: relative; }
-  .rc-modes { display: inline-flex; gap: 4px; background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--r-sm); padding: 3px; }
-  .rc-mode { font: .74rem var(--mono); color: var(--muted); background: transparent; border: 0; border-radius: 6px; padding: 4px 10px; cursor: pointer; transition: color var(--m-out), background-color var(--m-out); }
-  .rc-mode:hover { color: var(--text); }
-  .rc-mode.on { background: var(--accent); color: var(--accent-ink); }
-  .rc-plot :global(svg) { width: 100%; height: auto; display: block; }
-  .rc-plot :global(.rc-grid) { stroke: var(--border-soft); }
-  .rc-plot :global(.rc-tick) { fill: var(--faint); font: 11px var(--mono); }
-  @media (max-width: 600px) { .rc-plot :global(.rc-tick) { font-size: 20px; } .rc-plot :global(.rc-ylabel) { display: none; } }
-  .rc-plot :global(.rc-ylabel) { fill: var(--muted); }
-  .rc-plot :global(.rc-fit) { stroke: #e0a443; stroke-width: 2; stroke-dasharray: 6 5; }
-  .rc-plot :global(.rc-dot) { fill: rgba(79, 209, 197, .35); stroke: var(--accent); stroke-width: 1.2; cursor: pointer; transition: fill .14s; }
-  .rc-plot :global(.rc-dot:hover), .rc-plot :global(.rc-dot:focus) { fill: var(--accent); outline: none; }
-  .rc-tip { position: absolute; z-index: 3; width: max-content; max-width: 300px; font: .74rem var(--mono); color: var(--text); background: #0b1116; border: 1px solid var(--accent); border-radius: var(--r-sm); padding: 6px 9px; pointer-events: none; }
-  .rc-stat { margin: 8px 0 0; font: .76rem var(--mono); color: var(--muted); }
-  .findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-  .findings li { display: grid; gap: 4px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--r); }
-  .findings b { font: 600 1.15rem var(--mono); color: var(--accent); }
-  .findings span { color: var(--muted); font-size: .92rem; }
 
   /* ---------- Section heads as notebook cells ---------- */
   .sec { margin-bottom: 40px; max-width: 760px; }
@@ -769,7 +571,6 @@ kevin = <span class="fn">DataScientist</span>(
   .fstatus { margin: 0; color: var(--accent); min-height: 1.6em; font-family: var(--mono); font-size: .85rem; }
 
   @media (max-width: 1020px) {
-    .runs-grid { grid-template-columns: 1fr; }
     .hero-grid, .contact-grid { grid-template-columns: 1fr; }
     .df-wrap { grid-template-columns: 1fr; }
     .previews { position: static; }

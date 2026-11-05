@@ -1,32 +1,33 @@
 ---
 import { getCollection } from 'astro:content';
 import { t, contact, projectPath, type Lang } from '../i18n/ui';
+import { themes, fallbackTheme, heroMetrics, process, toolGroups, copy } from '../data/showcase';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
+const c = copy[lang];
 
 const projects = (await getCollection('projects', (p) => p.data.lang === lang))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const byPage = new Map(projects.map((p) => [p.data.page, p]));
+const theme = (page: string) => themes[page] ?? fallbackTheme;
+
+// Hero chart only shows projects that are published in this build.
+const metrics = heroMetrics.filter((m) => byPage.has(m.page));
 
 const icon = {
-  chart: '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/>',
-  brain: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>',
-  layout: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
   github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>',
   chat: '<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/>',
+  play: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 9 5 2.5-5 2.5z"/>',
 };
-const svg = (d: string, size = 22) =>
+const svg = (d: string, size = 18) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
-const services = [
-  ['services.1.t', 'services.1.d', icon.chart],
-  ['services.2.t', 'services.2.d', icon.brain],
-  ['services.3.t', 'services.3.d', icon.layout],
-] as const;
+const toolUse = (tool: string) =>
+  projects.filter((p) => p.data.tools.some((x) => x.toLowerCase() === tool.toLowerCase())).length;
 
-const tools = ['Python', 'pandas', 'scikit-learn', 'SQL', 'R', 'Jupyter', 'Git'];
 const cvHref = '/cv/Kevin_Leichen_CV_ES.pdf';
 const es = lang === 'es';
 const timeline = [
@@ -34,124 +35,200 @@ const timeline = [
   { when: es ? 'Ene 2025' : 'Jan 2025', what: 'Data & Cataloging Assistant', where: es ? 'Empresa numismática' : 'Numismatics company' },
   { when: es ? 'Ene – Feb 2024' : 'Jan – Feb 2024', what: 'Data Operations Analyst', where: es ? 'Plataforma de restaurantes' : 'Restaurant platform' },
 ];
+const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
 <section class="hero">
+  <div class="hero-bg" aria-hidden="true"></div>
   <div class="container hero-grid">
-    <div>
-      <p class="hello">{t(lang, 'hero.hello')}</p>
-      <h1>{t(lang, 'hero.name')}<br /><span>{t(lang, 'hero.role')}</span></h1>
-      <p class="pitch">{t(lang, 'hero.pitch')}</p>
-      <div class="ctas">
-        <a class="btn btn-primary" href="#contact">{t(lang, 'hero.cta')} <Fragment set:html={svg(icon.arrow, 18)} /></a>
-        <a class="btn btn-ghost" href={cvHref} download>{t(lang, 'hero.cv')} <Fragment set:html={svg(icon.download, 18)} /></a>
+    <div class="hero-copy">
+      <div class="who reveal">
+        <img src="/photo.png" alt="Kevin Leichen" width="56" height="56" />
+        <div>
+          <p class="who-line">{c.eyebrow}</p>
+          <p class="status"><span class="dot"></span>{c.status}</p>
+        </div>
+      </div>
+      <h1 class="reveal" style="--d:80ms">{c.nameA} <em>{c.nameB}</em></h1>
+      <p class="lede reveal" style="--d:160ms">{c.lede} <em>{c.ledeEm}</em></p>
+      <p class="pitch reveal" style="--d:220ms">{c.pitch}</p>
+      <div class="ctas reveal" style="--d:280ms">
+        <a class="btn btn-primary" href="#projects">{c.seeCases} <Fragment set:html={svg(icon.arrow)} /></a>
+        <a class="btn btn-ghost" href="#contact">{t(lang, 'hero.cta')}</a>
+        <a class="btn btn-ghost" href={cvHref} download>{t(lang, 'hero.cv')} <Fragment set:html={svg(icon.download)} /></a>
       </div>
     </div>
-    <div class="photo-wrap">
-      <div class="ring"></div>
-      <img src="/photo.png" alt="Kevin Leichen" width="600" height="600" />
+
+    {metrics.length > 0 && (
+      <figure class="chart card reveal" style="--d:200ms" aria-label={c.chartTitle}>
+        <figcaption>
+          <span class="chart-title">{c.chartTitle}</span>
+          <span class="legend">
+            <span><i class="lg before"></i>{c.chartBefore}</span>
+            <span><i class="lg after"></i>{c.chartAfter}</span>
+          </span>
+        </figcaption>
+        <div class="rows">
+          {metrics.map((m, i) => {
+            const th = theme(m.page);
+            const p = byPage.get(m.page)!;
+            return (
+              <a class="row" href={projectPath(lang, m.page)} style={`--c:${th.accent};--b:${m.before}%;--a:${m.after}%;--i:${i}`}
+                data-title={p.data.title} data-label={m.label[lang]} data-before={m.beforeLabel[lang]}
+                data-after={m.afterLabel[lang]} data-detail={m.detail[lang]}>
+                <span class="row-label"><span class="row-field">{th.field[lang]}</span>{m.label[lang]}</span>
+                <span class="track">
+                  <span class="span"></span>
+                  <span class="pt before"></span>
+                  <span class="pt after"><span class="val">{Math.round(m.after)}%</span></span>
+                </span>
+              </a>
+            );
+          })}
+        </div>
+        <div class="axis" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+        <div class="detail" aria-live="polite" style={`--c:${theme(metrics[0].page).accent}`}>
+          <div class="tt-title">{byPage.get(metrics[0].page)!.data.title}</div>
+          <div class="tt-ba"><span class="tt-before">{metrics[0].beforeLabel[lang]}</span><span class="tt-after">{metrics[0].afterLabel[lang]}</span></div>
+          <div class="tt-detail">{metrics[0].detail[lang]}</div>
+        </div>
+        <p class="hint">{c.chartHint}</p>
+      </figure>
+    )}
+  </div>
+</section>
+
+<section id="projects" class="alt">
+  <div class="container">
+    <div class="section-head reveal">
+      <p class="eyebrow">{c.projectsEyebrow}</p>
+      <h2>{c.projectsTitle}</h2>
+      <p>{c.projectsSub}</p>
+    </div>
+    <div class="cases">
+      {projects.map((p, i) => {
+        const th = theme(p.data.page);
+        return (
+          <a class="case reveal" href={projectPath(lang, p.data.page)} style={`--c:${th.accent};--paper:${th.paper}`}>
+            <div class="case-cover">
+              <img src={p.data.cover} alt="" loading="lazy" />
+              {p.data.embed && <span class="tool-badge"><Fragment set:html={svg(icon.play, 15)} />{c.tryTool}</span>}
+            </div>
+            <div class="case-body">
+              <p class="case-meta"><span class="num">{pad(projects.length - i)}</span>{th.field[lang]} · {th.method[lang]}</p>
+              <h3>{p.data.title}</h3>
+              <p class="case-sum">{p.data.summary}</p>
+              {p.data.highlights.length > 0 && (
+                <dl class="kpis">
+                  {p.data.highlights.slice(0, 3).map((h) => (
+                    <div class="kpi"><dt data-count={h.value}>{h.value}</dt><dd>{h.label}</dd></div>
+                  ))}
+                </dl>
+              )}
+              <div class="case-foot">
+                <div class="chips">{p.data.tools.slice(0, 5).map((tool) => <span class="chip">{tool}</span>)}</div>
+                <span class="go">{c.open} <Fragment set:html={svg(icon.arrow)} /></span>
+              </div>
+            </div>
+          </a>
+        );
+      })}
     </div>
   </div>
 </section>
 
-<section id="services" class="alt">
+<section id="services">
   <div class="container">
-    <div class="section-head">
-      <h2>{t(lang, 'services.title')}</h2>
+    <div class="section-head reveal">
+      <p class="eyebrow">{c.processEyebrow}</p>
+      <h2>{c.processTitle}</h2>
       <p>{t(lang, 'services.sub')}</p>
     </div>
-    <div class="grid3">
-      {services.map(([title, desc, ic]) => (
-        <div class="card service">
-          <div class="icon-box"><Fragment set:html={svg(ic, 26)} /></div>
-          <h3>{t(lang, title)}</h3>
-          <p class="muted">{t(lang, desc)}</p>
-        </div>
+    <ol class="steps">
+      {process.map((s, i) => (
+        <li class="step reveal" style={`--d:${i * 90}ms`}>
+          <span class="step-n">{pad(i + 1)}</span>
+          <h3>{s.title[lang]}</h3>
+          <p>{s.desc[lang]}</p>
+          <span class="step-ex">{c.example} {s.example[lang]}</span>
+        </li>
       ))}
-    </div>
-  </div>
-</section>
+    </ol>
 
-<section id="projects">
-  <div class="container">
-    <div class="section-head">
-      <h2>{t(lang, 'projects.title')}</h2>
-      <p>{t(lang, 'projects.sub')}</p>
-    </div>
-    <div class="grid3">
-      {projects.map((p) => (
-        <a class="card project" href={projectPath(lang, p.data.page)}>
-          <div class="cover">
-            <img src={p.data.cover} alt="" loading="lazy" />
-            <div class="overlay"><span class="btn btn-primary">{t(lang, 'projects.view')}</span></div>
+    <div class="toolbox reveal">
+      <p class="eyebrow">{c.toolsEyebrow}</p>
+      <div class="groups">
+        {toolGroups.map((g) => (
+          <div class="group">
+            <span class="group-name">{g.name[lang]}</span>
+            <div class="group-tools">
+              {g.tools.map((tool) => {
+                const n = toolUse(tool);
+                return <span class:list={['tool', { used: n > 0 }]} data-tip={c.usedIn(n)} tabindex="0">{tool}{n > 0 && <sup>{n}</sup>}</span>;
+              })}
+            </div>
           </div>
-          <div class="body">
-            <h3>{p.data.title}</h3>
-            <p class="muted">{p.data.summary}</p>
-            <div class="chips">{p.data.tools.slice(0, 4).map((tool) => <span class="chip">{tool}</span>)}</div>
-          </div>
-        </a>
-      ))}
+        ))}
+      </div>
     </div>
   </div>
 </section>
 
-<section class="tools alt">
-  <div class="container tools-row">
-    <span class="tools-label">{t(lang, 'tools.title')}</span>
-    {tools.map((tool) => <span class="tool">{tool}</span>)}
-  </div>
-</section>
-
-<section id="about">
+<section id="about" class="alt">
   <div class="container about-grid">
-    <ol class="card timeline">
+    <div class="portrait reveal">
+      <img src="/photo.png" alt="Kevin Leichen" width="600" height="600" loading="lazy" />
+    </div>
+    <div class="about-copy">
+      <p class="eyebrow reveal">{c.aboutEyebrow}</p>
+      <h2 class="reveal">{t(lang, 'about.title')}</h2>
+      <p class="reveal">{t(lang, 'about.p1')}</p>
+      <p class="reveal">{t(lang, 'about.p2')}</p>
+      <p class="reveal">{t(lang, 'about.p3')}</p>
+      <div class="stats reveal">
+        <div class="stat"><strong>{t(lang, 'about.year')}</strong><span>{t(lang, 'about.stat1')}</span></div>
+        <div class="stat"><strong data-count={String(projects.length)}>{projects.length}</strong><span>{t(lang, 'about.stat2')}</span></div>
+        <div class="stat"><strong>C1</strong><span>{t(lang, 'about.stat3')}</span></div>
+      </div>
+    </div>
+    <ol class="timeline reveal">
       {timeline.map((item) => (
         <li><span class="when">{item.when}</span><strong>{item.what}</strong><span class="muted">{item.where}</span></li>
       ))}
     </ol>
-    <div>
-      <h2 class="bar-title">{t(lang, 'about.title')}</h2>
-      <p class="muted">{t(lang, 'about.p1')}</p>
-      <p class="muted">{t(lang, 'about.p2')}</p>
-      <p class="muted">{t(lang, 'about.p3')}</p>
-      <div class="stats">
-        <div class="card stat"><strong>{t(lang, 'about.year')}</strong><span>{t(lang, 'about.stat1')}</span></div>
-        <div class="card stat"><strong>{projects.length}</strong><span>{t(lang, 'about.stat2')}</span></div>
-        <div class="card stat"><strong>C1</strong><span>{t(lang, 'about.stat3')}</span></div>
-      </div>
-    </div>
   </div>
 </section>
 
-<section id="contact" class="alt">
-  <div class="container narrow">
-    <div class="section-head">
-      <h2>{t(lang, 'contact.title')}</h2>
-      <p>{t(lang, 'contact.sub')}</p>
+<section id="contact">
+  <div class="container contact-grid">
+    <div class="reveal">
+      <p class="eyebrow">{c.contactEyebrow}</p>
+      <h2 class="contact-title">{c.contactTitle}</h2>
+      <p class="muted contact-sub">{c.contactSub}</p>
+      <div class="direct">
+        <a class="btn btn-ghost" href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener">
+          <Fragment set:html={svg(icon.chat)} /> {t(lang, 'contact.whatsapp')}
+        </a>
+        <a class="btn btn-ghost" href={contact.github} target="_blank" rel="noopener"><Fragment set:html={svg(icon.github)} /> GitHub</a>
+      </div>
     </div>
-    <form class="card form" id="contact-form" data-key={contact.web3formsKey} data-mail={contact.email}
+    <form class="card form reveal" id="contact-form" data-key={contact.web3formsKey} data-mail={contact.email}
       data-sending={t(lang, 'contact.sending')} data-ok={t(lang, 'contact.ok')} data-err={t(lang, 'contact.err')}>
-      <div class="row">
+      <div class="frow">
         <label>{t(lang, 'contact.name')}<input name="name" required autocomplete="name" /></label>
         <label>{t(lang, 'contact.email')}<input name="email" type="email" required autocomplete="email" /></label>
       </div>
       <label>{t(lang, 'contact.message')}<textarea name="message" rows="5" required></textarea></label>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">{t(lang, 'contact.send')}</button>
-        <a class="btn btn-ghost" href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener">
-          <Fragment set:html={svg(icon.chat, 18)} /> {t(lang, 'contact.whatsapp')}
-        </a>
-      </div>
-      <p class="status" aria-live="polite"></p>
+      <button class="btn btn-primary" type="submit">{t(lang, 'contact.send')} <Fragment set:html={svg(icon.arrow)} /></button>
+      <p class="fstatus" aria-live="polite"></p>
     </form>
-    <p class="socials"><a href={contact.github} target="_blank" rel="noopener"><Fragment set:html={svg(icon.github, 20)} /> GitHub</a></p>
   </div>
 </section>
 
 <script>
+  // Contact form
   const form = document.getElementById('contact-form') as HTMLFormElement;
-  const status = form.querySelector('.status') as HTMLElement;
+  const status = form.querySelector('.fstatus') as HTMLElement;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const d = form.dataset;
@@ -174,76 +251,235 @@ const timeline = [
       status.textContent = d.err!;
     }
   });
+
+  // Hero chart: hovering a row fills the detail panel under the chart.
+  const chart = document.querySelector('.chart') as HTMLElement | null;
+  if (chart) {
+    const panel = chart.querySelector('.detail') as HTMLElement;
+    const set = (sel: string, text: string) => { (panel.querySelector(sel) as HTMLElement).textContent = text; };
+    const show = (row: HTMLElement) => {
+      const d = row.dataset;
+      set('.tt-title', d.title!); set('.tt-before', d.before!); set('.tt-after', d.after!); set('.tt-detail', d.detail!);
+      panel.style.setProperty('--c', getComputedStyle(row).getPropertyValue('--c'));
+      chart.classList.add('focus');
+      chart.querySelectorAll('.row').forEach((r) => r.classList.toggle('on', r === row));
+    };
+    chart.querySelectorAll<HTMLElement>('.row').forEach((row) => {
+      row.addEventListener('mouseenter', () => show(row));
+      row.addEventListener('focus', () => show(row));
+    });
+    chart.addEventListener('mouseleave', () => chart.classList.remove('focus'));
+  }
+
+  // Count-up for numbers like "48%", "+6.9%", "−$670k" when they scroll into view.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const re = /^([+−-]?\$?)(\d+(?:\.\d+)?)(%|k)?$/;
+  const counters = [...document.querySelectorAll<HTMLElement>('[data-count]')].filter((el) => re.test(el.dataset.count!));
+  const run = (el: HTMLElement) => {
+    const [, pre, num, suf = ''] = el.dataset.count!.match(re)!;
+    const target = parseFloat(num), dec = (num.split('.')[1] || '').length, t0 = performance.now();
+    const tick = (now: number) => {
+      const k = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = pre + (target * e).toFixed(dec) + suf;
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  if (!reduce) {
+    const cio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { run(e.target as HTMLElement); cio.unobserve(e.target); } }), { threshold: .6 });
+    counters.forEach((el) => cio.observe(el));
+  }
 </script>
 
 <style>
-  .hero { padding: 72px 0 96px; }
-  .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
-  .hello { color: var(--accent); font-weight: 600; font-size: 1.15rem; margin: 0 0 12px; }
-  h1 { font-size: clamp(2.6rem, 6vw, 4.2rem); font-weight: 800; }
-  h1 span { color: var(--accent); }
-  .pitch { color: var(--muted); font-size: 1.15rem; max-width: 34em; margin: 24px 0 36px; }
-  .ctas { display: flex; gap: 16px; flex-wrap: wrap; }
-  .photo-wrap { position: relative; width: min(100%, 400px); aspect-ratio: 1; justify-self: center; }
-  .photo-wrap img { position: absolute; inset: 18px; width: calc(100% - 36px); height: calc(100% - 36px); border-radius: 50%; object-fit: cover; }
-  .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: .5; }
-  .ring::after { content: ''; position: absolute; inset: -14px; border-radius: 50%; border: 1px dashed var(--border); }
+  /* ---------- Hero ---------- */
+  .hero { padding: 72px 0 104px; overflow: hidden; }
+  .hero-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(147, 165, 181, .16) 1px, transparent 1px);
+    background-size: 26px 26px;
+    mask-image: radial-gradient(ellipse 70% 70% at 70% 40%, #000 20%, transparent 75%);
+  }
+  .hero-bg::after {
+    content: ''; position: absolute; width: 620px; height: 620px; right: -120px; top: -160px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(79, 209, 197, .16), transparent 65%);
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; align-items: center; position: relative; }
+  .who { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
+  .who img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+  .who p { margin: 0; }
+  .who-line { font-family: var(--mono); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .status { display: flex; align-items: center; gap: 8px; font-size: .92rem; font-weight: 500; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #5ee08a; box-shadow: 0 0 0 0 rgba(94, 224, 138, .6); animation: pulse 2.4s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(94, 224, 138, 0); } 100% { box-shadow: 0 0 0 0 rgba(94, 224, 138, 0); } }
+  h1 { font-size: clamp(3.6rem, 9vw, 7.2rem); line-height: .92; letter-spacing: -0.02em; }
+  h1 em, .lede em { font-style: italic; color: var(--accent); }
+  .lede { font-family: var(--serif); font-size: clamp(1.6rem, 2.8vw, 2.2rem); line-height: 1.2; margin: 26px 0 16px; max-width: 18em; }
+  .pitch { color: var(--muted); font-size: 1.08rem; max-width: 32em; margin: 0 0 34px; }
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
 
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-  .service { padding: 32px; }
-  .service h3 { font-size: 1.3rem; margin: 22px 0 10px; }
-  .service p { margin: 0; }
+  /* Hero chart: dumbbell, before → after */
+  .chart { position: relative; margin: 0; padding: 26px 26px 18px; background: linear-gradient(180deg, var(--surface), rgba(23, 34, 44, .7)); box-shadow: 0 30px 80px -40px rgba(0, 0, 0, .8); }
+  figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chart-title { font-family: var(--serif); font-size: 1.45rem; }
+  .legend { display: flex; gap: 16px; font-size: .78rem; color: var(--muted); font-family: var(--mono); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .lg { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .lg.before { border: 2px solid var(--faint); }
+  .lg.after { background: var(--accent); }
+  .rows { display: grid; gap: 6px; }
+  .row { display: grid; gap: 8px; padding: 10px 10px 12px; margin: 0 -10px; border-radius: 10px; transition: background .2s, opacity .25s; }
+  .chart.focus .row:not(.on) { opacity: .4; }
+  .row.on { background: var(--surface-2); }
+  .row-label { font-size: .9rem; display: flex; flex-direction: column; }
+  .row-field { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--c); }
+  .track {
+    position: relative; height: 18px; margin-right: 44px;
+    background: repeating-linear-gradient(90deg, var(--border-soft) 0 1px, transparent 1px 25%);
+    background-size: calc(100% + 1px) 100%;
+  }
+  .track::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--border); }
+  .span { position: absolute; top: 50%; height: 4px; margin-top: -2px; left: var(--b); width: calc(var(--a) - var(--b)); background: linear-gradient(90deg, rgba(147, 165, 181, .25), var(--c)); border-radius: 2px; transform-origin: 0 50%; }
+  .pt { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; }
+  .pt.before { left: var(--b); background: var(--bg); border: 2px solid var(--faint); }
+  .pt.after { left: var(--a); background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent); }
+  .val { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: .78rem; color: var(--c); font-weight: 500; }
+  .js .chart .span { transform: scaleX(0); transition: transform 1s var(--ease); transition-delay: calc(400ms + var(--i) * 140ms); }
+  .js .chart .pt.after { left: var(--b); transition: left 1s var(--ease); transition-delay: calc(400ms + var(--i) * 140ms); }
+  .js .chart.in .span { transform: none; }
+  .js .chart.in .pt.after { left: var(--a); }
+  .axis { display: flex; justify-content: space-between; margin: 6px 44px 0 0; font-family: var(--mono); font-size: .68rem; color: var(--faint); }
+  .hint { margin: 14px 0 0; font-size: .78rem; color: var(--faint); }
+  .detail {
+    margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: rgba(11, 17, 22, .6);
+    border: 1px solid var(--border-soft); border-left: 3px solid var(--c); font-size: .88rem; transition: border-color .25s;
+  }
+  .tt-title { font-family: var(--serif); font-size: 1.15rem; margin-bottom: 6px; }
+  .tt-ba { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  .tt-before { color: var(--muted); }
+  .tt-before::before { content: '○ '; }
+  .tt-after { color: var(--c); font-weight: 600; }
+  .tt-after::before { content: '● '; }
+  .tt-detail { margin-top: 6px; color: var(--text); opacity: .8; }
 
-  .project { overflow: hidden; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; }
-  .project:hover { border-color: var(--accent); transform: translateY(-4px); }
-  .cover { position: relative; aspect-ratio: 16 / 10; background: #fff; }
-  .cover img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
-  .overlay { position: absolute; inset: 0; background: rgba(17, 26, 34, .7); display: grid; place-items: center; opacity: 0; transition: opacity .2s; }
-  .project:hover .overlay, .project:focus-visible .overlay { opacity: 1; }
-  .body { padding: 24px; }
-  .body h3 { font-size: 1.25rem; margin-bottom: 8px; }
-  .project:hover h3 { color: var(--accent); }
-  .body p { margin: 0 0 16px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* ---------- Case studies ---------- */
+  .cases { display: grid; gap: 28px; }
+  .case {
+    display: grid; grid-template-columns: 1fr 1.15fr; border-radius: 20px; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border-soft); position: relative;
+    transition: border-color .3s, transform .4s var(--ease), box-shadow .4s;
+  }
+  .case::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); z-index: 1; }
+  .case:nth-child(even) { grid-template-columns: 1.15fr 1fr; }
+  .case:nth-child(even) .case-cover { order: 2; }
+  .case:hover { border-color: color-mix(in srgb, var(--c) 55%, transparent); transform: translateY(-4px); box-shadow: 0 30px 60px -40px color-mix(in srgb, var(--c) 70%, transparent); }
+  .case-cover { background: var(--paper); position: relative; display: grid; place-items: center; padding: 28px; min-height: 300px; }
+  .case-cover img { width: 100%; height: 100%; max-height: 340px; object-fit: contain; transition: transform .6s var(--ease); }
+  .case:hover .case-cover img { transform: scale(1.03); }
+  .tool-badge {
+    position: absolute; left: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(14, 21, 27, .86); color: #fff; font-size: .74rem; padding: 6px 11px; border-radius: 999px; font-weight: 500;
+  }
+  .case-body { padding: 36px 40px; display: flex; flex-direction: column; }
+  .case-meta { font-family: var(--mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--c); margin: 0 0 14px; display: flex; gap: 12px; align-items: center; }
+  .num { color: var(--faint); }
+  .case h3 { font-family: var(--serif); font-size: clamp(1.8rem, 3vw, 2.4rem); }
+  .case-sum { color: var(--muted); margin: 14px 0 24px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 0 0 26px; padding: 18px 0; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+  .kpi dt { font-family: var(--serif); font-size: 2rem; line-height: 1; color: var(--c); white-space: nowrap; }
+  .kpi dd { margin: 8px 0 0; font-size: .8rem; color: var(--muted); line-height: 1.4; }
+  .case-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .case .chip { background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
+  .go { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text); }
+  .go :global(svg) { transition: transform .3s var(--ease); }
+  .case:hover .go { color: var(--c); }
+  .case:hover .go :global(svg) { transform: translateX(4px); }
 
-  .tools { padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-  .tools-row { display: flex; flex-wrap: wrap; gap: 14px 36px; justify-content: center; align-items: center; }
-  .tools-label { color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: .85rem; letter-spacing: .1em; }
-  .tool { color: var(--muted); font-weight: 600; font-size: 1.05rem; }
+  /* ---------- Process + tools ---------- */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--border); }
+  .step { padding: 28px 24px 8px 0; position: relative; }
+  .step + .step { padding-left: 24px; border-left: 1px solid var(--border-soft); }
+  .step::before { content: ''; position: absolute; top: -5px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+  .step + .step::before { left: -5px; }
+  .step-n { font-family: var(--mono); font-size: .8rem; color: var(--faint); }
+  .step h3 { font-family: var(--serif); font-size: 1.6rem; margin: 10px 0 12px; }
+  .step p { color: var(--muted); font-size: .95rem; margin: 0 0 16px; }
+  .step-ex { font-family: var(--mono); font-size: .74rem; color: var(--accent); }
+  .toolbox { margin-top: 88px; }
+  .groups { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .group { display: grid; gap: 12px; align-content: start; }
+  .group-name { color: var(--muted); font-size: .85rem; }
+  .group-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tool {
+    position: relative; padding: 7px 13px; border-radius: 10px; border: 1px solid var(--border-soft); background: var(--surface);
+    font-weight: 500; font-size: .93rem; cursor: default; transition: border-color .2s, color .2s;
+  }
+  .tool sup { font-family: var(--mono); color: var(--accent); font-size: .65rem; margin-left: 3px; }
+  .tool:hover, .tool:focus-visible { border-color: var(--accent); color: var(--accent); }
+  .tool::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translate(-50%, 4px);
+    white-space: nowrap; background: #0b1116; color: var(--text); border: 1px solid var(--border); font-size: .75rem;
+    padding: 5px 9px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; font-weight: 400;
+  }
+  .tool:hover::after, .tool:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
 
-  .about-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 64px; align-items: center; }
-  .timeline { list-style: none; margin: 0; padding: 28px 28px 28px 44px; display: grid; gap: 26px; position: relative; }
-  .timeline::before { content: ''; position: absolute; left: 28px; top: 36px; bottom: 36px; width: 2px; background: var(--border); }
-  .timeline li { position: relative; display: grid; gap: 2px; }
-  .timeline li::before { content: ''; position: absolute; left: -21px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-  .when { color: var(--accent); font-size: .85rem; font-weight: 600; }
-  .bar-title { font-size: clamp(2rem, 4vw, 2.75rem); border-left: 4px solid var(--accent); padding-left: 18px; margin-bottom: 24px; }
-  .about-grid p { font-size: 1.08rem; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
-  .stat { padding: 22px 12px; text-align: center; }
-  .stat strong { display: block; font-size: 2rem; color: var(--accent); }
-  .stat span { color: var(--muted); font-size: .9rem; }
+  /* ---------- About ---------- */
+  .about-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 24px 72px; align-items: center; }
+  .portrait { position: relative; aspect-ratio: 4 / 5; border-radius: 22px; overflow: hidden; border: 1px solid var(--border); }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.9); }
+  .portrait::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(14, 21, 27, .55)); }
+  .about-copy h2 { font-size: clamp(2.3rem, 4.6vw, 3.6rem); margin-bottom: 20px; }
+  .about-copy p:not(.eyebrow) { color: var(--muted); font-size: 1.07rem; margin: 0 0 14px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 30px; border-top: 1px solid var(--border); }
+  .stat { padding: 18px 16px 0 0; }
+  .stat + .stat { padding-left: 16px; border-left: 1px solid var(--border-soft); }
+  .stat strong { display: block; font-family: var(--serif); font-size: 2.6rem; line-height: 1; color: var(--accent); font-weight: 400; }
+  .stat span { color: var(--muted); font-size: .85rem; }
+  .timeline { grid-column: 1 / -1; list-style: none; margin: 48px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); }
+  .timeline li { position: relative; display: grid; gap: 2px; padding: 22px 20px 0 0; }
+  .timeline li::before { content: ''; position: absolute; left: 0; top: -5px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+  .when { font-family: var(--mono); color: var(--accent); font-size: .76rem; }
 
-  .narrow { max-width: 760px; }
-  .form { padding: 32px; display: grid; gap: 18px; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  label { display: grid; gap: 8px; font-weight: 500; font-size: .95rem; }
+  /* ---------- Contact ---------- */
+  .contact-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 64px; align-items: start; }
+  .contact-title { font-size: clamp(2.5rem, 5vw, 4rem); }
+  .contact-sub { font-size: 1.1rem; margin: 16px 0 30px; }
+  .direct { display: flex; flex-wrap: wrap; gap: 12px; }
+  .form { padding: 30px; display: grid; gap: 18px; }
+  .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  label { display: grid; gap: 8px; font-weight: 500; font-size: .9rem; color: var(--muted); }
   input, textarea {
     background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 14px; color: var(--text); font: inherit; resize: vertical;
+    padding: 12px 14px; color: var(--text); font: inherit; resize: vertical; transition: border-color .2s;
   }
-  input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
-  .form-actions { display: flex; gap: 16px; flex-wrap: wrap; }
-  .status { margin: 0; color: var(--accent); min-height: 1.6em; }
-  .socials { text-align: center; margin-top: 28px; }
-  .socials a { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); }
-  .socials a:hover { color: var(--accent); }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .form .btn { justify-self: start; }
+  .fstatus { margin: 0; color: var(--accent); min-height: 1.6em; }
 
-  @media (max-width: 900px) {
-    .hero-grid, .about-grid { grid-template-columns: 1fr; }
-    .photo-wrap { order: -1; width: min(70%, 300px); }
-    .timeline { order: 2; }
-    .grid3 { grid-template-columns: 1fr; }
-    .row { grid-template-columns: 1fr; }
+  @media (max-width: 980px) {
+    .hero-grid, .about-grid, .contact-grid { grid-template-columns: 1fr; }
+    .case, .case:nth-child(even) { grid-template-columns: 1fr; }
+    .case:nth-child(even) .case-cover { order: 0; }
+    .steps, .groups { grid-template-columns: repeat(2, 1fr); }
+    .step:nth-child(3) { padding-left: 0; border-left: 0; }
+    .step:nth-child(3)::before { left: 0; }
+    .portrait { max-width: 360px; }
+  }
+  @media (max-width: 620px) {
+    .hero { padding-top: 40px; }
+    .case-body { padding: 26px 22px; }
+    .case-cover { min-height: 200px; padding: 18px; }
+    .kpis { grid-template-columns: 1fr; gap: 12px; }
+    .kpi { display: grid; grid-template-columns: 7.5rem 1fr; gap: 12px; align-items: baseline; }
+    .kpi dd { margin: 0; }
+    .kpi dt { font-size: 1.7rem; white-space: normal; }
+    .steps, .groups, .timeline { grid-template-columns: 1fr; }
+    .step, .step + .step { padding-left: 20px; border-left: 1px solid var(--border-soft); }
+    .step::before, .step + .step::before, .step:nth-child(3)::before { left: -5px; }
+    .steps { border-top: 0; }
+    .timeline li { padding-bottom: 18px; }
+    .frow { grid-template-columns: 1fr; }
+    .stat strong { font-size: 2.1rem; }
   }
 </style>

@@ -1,157 +1,323 @@
 ---
 import { getCollection } from 'astro:content';
 import { t, contact, projectPath, type Lang } from '../i18n/ui';
+import { themes, fallbackTheme, heroMetrics, process, processFns, toolGroups, career, copy } from '../data/showcase';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
+const c = copy[lang];
 
 const projects = (await getCollection('projects', (p) => p.data.lang === lang))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const byPage = new Map(projects.map((p) => [p.data.page, p]));
+const theme = (page: string) => themes[page] ?? fallbackTheme;
+const metrics = heroMetrics.filter((m) => byPage.has(m.page));
 
+// Tools × cases matrix, from the projects' own frontmatter.
+const norm = (s: string) => s.toLowerCase();
+const allTools = new Map<string, string>();
+projects.forEach((p) => p.data.tools.forEach((tool) => { if (!allTools.has(norm(tool))) allTools.set(norm(tool), tool); }));
+const usedBy = (tool: string) => projects.filter((p) => p.data.tools.some((x) => norm(x) === norm(tool)));
+const heatRows = [...allTools.values()]
+  .map((tool) => ({ tool, cases: usedBy(tool) }))
+  .sort((a, b) => b.cases.length - a.cases.length || a.tool.localeCompare(b.tool));
+const alsoUse = toolGroups.flatMap((g) => g.tools).filter((tool) => !allTools.has(norm(tool)));
+
+// Gantt: Jan 2024 to the build month.
+const now = new Date();
+const monthIdx = (ym: string) => { const [y, m] = ym.split('-').map(Number); return (y - 2024) * 12 + (m - 1); };
+const nowIdx = (now.getFullYear() - 2024) * 12 + now.getMonth();
+const span = nowIdx + 1;
+const years = Array.from({ length: now.getFullYear() - 2024 + 1 }, (_, i) => 2024 + i);
+
+const cvHref = '/cv/Kevin_Leichen_CV_ES.pdf';
 const icon = {
-  chart: '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/>',
-  brain: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>',
-  layout: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
   github: '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>',
   chat: '<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/>',
 };
-const svg = (d: string, size = 22) =>
+const svg = (d: string, size = 18) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-
-const services = [
-  ['services.1.t', 'services.1.d', icon.chart],
-  ['services.2.t', 'services.2.d', icon.brain],
-  ['services.3.t', 'services.3.d', icon.layout],
-] as const;
-
-const tools = ['Python', 'pandas', 'scikit-learn', 'SQL', 'R', 'Jupyter', 'Git'];
-const cvHref = '/cv/Kevin_Leichen_CV_ES.pdf';
-const es = lang === 'es';
-const timeline = [
-  { when: es ? '2024 – hoy' : '2024 – now', what: es ? 'Lic. en Ciencias de Datos' : 'BSc in Data Science', where: 'Universidad Austral' },
-  { when: es ? 'Ene 2025' : 'Jan 2025', what: 'Data & Cataloging Assistant', where: es ? 'Empresa numismática' : 'Numismatics company' },
-  { when: es ? 'Ene – Feb 2024' : 'Jan – Feb 2024', what: 'Data Operations Analyst', where: es ? 'Plataforma de restaurantes' : 'Restaurant platform' },
-];
 ---
 
+<!-- ===== Hero: a notebook cell and Fig. 1 ===== -->
 <section class="hero">
   <div class="container hero-grid">
-    <div>
-      <p class="hello">{t(lang, 'hero.hello')}</p>
-      <h1>{t(lang, 'hero.name')}<br /><span>{t(lang, 'hero.role')}</span></h1>
-      <p class="pitch">{t(lang, 'hero.pitch')}</p>
-      <div class="ctas">
-        <a class="btn btn-primary" href="#contact">{t(lang, 'hero.cta')} <Fragment set:html={svg(icon.arrow, 18)} /></a>
-        <a class="btn btn-ghost" href={cvHref} download>{t(lang, 'hero.cv')} <Fragment set:html={svg(icon.download, 18)} /></a>
+    <div class="nb">
+      <div class="cell-in reveal">
+        <span class="prompt">In&nbsp;[1]:</span>
+        <pre class="code"><code><span class="kw">from</span> kevin_leichen <span class="kw">import</span> DataScientist
+kevin = <span class="fn">DataScientist</span>(
+    city=<span class="str">"Buenos Aires"</span>,
+    status=<span class="str">"{c.status}"</span>,
+)
+kevin.<span class="fn">summary</span>()<span class="caret"></span></code></pre>
+      </div>
+      <div class="cell-out">
+        <span class="prompt out reveal" style="--d:250ms">Out[1]:</span>
+        <div>
+          <div class="who reveal" style="--d:300ms">
+            <img src="/photo.png" alt="Kevin Leichen" width="64" height="64" />
+            <div>
+              <p class="role">{c.role}</p>
+              <p class="role-sub">{c.roleSub}</p>
+            </div>
+          </div>
+          <h1 class="reveal" style="--d:380ms">Kevin Leichen</h1>
+          <p class="lede reveal" style="--d:460ms">{c.lede}</p>
+          <p class="pitch reveal" style="--d:520ms">{c.pitch}</p>
+          <div class="ctas reveal" style="--d:580ms">
+            <a class="btn btn-primary" href="#projects">{c.seeCases} <Fragment set:html={svg(icon.arrow)} /></a>
+            <a class="btn btn-ghost" href="#contact">{t(lang, 'hero.cta')}</a>
+            <a class="btn btn-ghost" href={cvHref} download>{t(lang, 'hero.cv')} <Fragment set:html={svg(icon.download)} /></a>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="photo-wrap">
-      <div class="ring"></div>
-      <img src="/photo.png" alt="Kevin Leichen" width="600" height="600" />
-    </div>
-  </div>
-</section>
 
-<section id="services" class="alt">
-  <div class="container">
-    <div class="section-head">
-      <h2>{t(lang, 'services.title')}</h2>
-      <p>{t(lang, 'services.sub')}</p>
-    </div>
-    <div class="grid3">
-      {services.map(([title, desc, ic]) => (
-        <div class="card service">
-          <div class="icon-box"><Fragment set:html={svg(ic, 26)} /></div>
-          <h3>{t(lang, title)}</h3>
-          <p class="muted">{t(lang, desc)}</p>
+    {metrics.length > 0 && (
+      <figure class="fig chart reveal" style="--d:300ms">
+        <figcaption>
+          <span class="fig-title">{c.fig1}</span>
+          <span class="legend">
+            <span><i class="lg before"></i>{c.fig1Before}</span>
+            <span><i class="lg after"></i>{c.fig1After}</span>
+          </span>
+        </figcaption>
+        <div class="rows">
+          {metrics.map((m, i) => {
+            const th = theme(m.page);
+            const p = byPage.get(m.page)!;
+            return (
+              <a class="row" href={projectPath(lang, m.page)} style={`--c:${th.accent};--b:${m.before}%;--a:${m.after}%;--i:${i}`}
+                data-title={p.data.title} data-before={m.beforeLabel[lang]} data-after={m.afterLabel[lang]} data-detail={m.detail[lang]}>
+                <span class="row-label"><span class="row-field">{th.short[lang]}</span>{m.label[lang]}</span>
+                <span class="track">
+                  <span class="span"></span>
+                  <span class="pt before"></span>
+                  <span class="pt after"><span class="val">{Math.round(m.after)}%</span></span>
+                </span>
+              </a>
+            );
+          })}
         </div>
-      ))}
-    </div>
+        <div class="axis" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+        <div class="detail" aria-live="polite" style={`--c:${theme(metrics[0].page).accent}`}>
+          <div class="tt-title">{byPage.get(metrics[0].page)!.data.title}</div>
+          <div class="tt-ba"><span class="tt-before">{metrics[0].beforeLabel[lang]}</span><span class="tt-after">{metrics[0].afterLabel[lang]}</span></div>
+          <div class="tt-detail">{metrics[0].detail[lang]}</div>
+        </div>
+        <p class="hint">{c.fig1Hint}</p>
+      </figure>
+    )}
   </div>
 </section>
 
-<section id="projects">
+<!-- ===== Cases as a dataframe ===== -->
+<section id="projects" class="alt">
   <div class="container">
-    <div class="section-head">
-      <h2>{t(lang, 'projects.title')}</h2>
-      <p>{t(lang, 'projects.sub')}</p>
-    </div>
-    <div class="grid3">
-      {projects.map((p) => (
-        <a class="card project" href={projectPath(lang, p.data.page)}>
-          <div class="cover">
-            <img src={p.data.cover} alt="" loading="lazy" />
-            <div class="overlay"><span class="btn btn-primary">{t(lang, 'projects.view')}</span></div>
-          </div>
-          <div class="body">
-            <h3>{p.data.title}</h3>
-            <p class="muted">{p.data.summary}</p>
-            <div class="chips">{p.data.tools.slice(0, 4).map((tool) => <span class="chip">{tool}</span>)}</div>
-          </div>
-        </a>
-      ))}
+    <header class="sec reveal">
+      <span class="prompt">In&nbsp;[2]:</span>
+      <code class="sec-code">cases.<span class="fn">sort_values</span>(<span class="str">"date"</span>, ascending=<span class="kw">False</span>)</code>
+      <h2>{c.casesTitle}</h2>
+      <p>{c.casesSub}</p>
+    </header>
+
+    <div class="df-wrap reveal">
+      <div class="df" role="table">
+        <div class="df-head" role="row">
+          <span role="columnheader" class="idx"></span>
+          {c.cols.map((col) => <span role="columnheader">{col}</span>)}
+        </div>
+        {projects.map((p, i) => {
+          const th = theme(p.data.page);
+          const h = p.data.highlights[0];
+          return (
+            <a class:list={['df-row', { on: i === 0 }]} role="row" href={projectPath(lang, p.data.page)} data-i={i} style={`--c:${th.accent}`}>
+              <span role="cell" class="idx">{i}</span>
+              <span role="cell" class="df-case">{p.data.title}</span>
+              <span role="cell" class="df-field">{th.field[lang]}</span>
+              <span role="cell" class="df-method">{th.method[lang]}</span>
+              <span role="cell" class="df-result">{h && <><b>{h.value}</b> <span>{h.label}</span></>}</span>
+            </a>
+          );
+        })}
+        <p class="df-shape">{c.shape(projects.length)}</p>
+      </div>
+
+      <div class="previews">
+        {projects.map((p, i) => {
+          const th = theme(p.data.page);
+          return (
+            <a class:list={['pv', { on: i === 0 }]} data-i={i} href={projectPath(lang, p.data.page)} style={`--c:${th.accent};--paper:${th.paper}`}>
+              <div class="pv-cover"><img src={p.data.cover} alt="" loading={i === 0 ? 'eager' : 'lazy'} /></div>
+              <div class="pv-body">
+                <p class="pv-meta">{th.field[lang]} · {th.method[lang]}{p.data.embed && <> · <span>{c.tool}</span></>}</p>
+                <h3>{p.data.title}</h3>
+                <p class="pv-sum">{p.data.summary}</p>
+                <dl class="kpis">
+                  {p.data.highlights.slice(0, 3).map((h) => <div><dt>{h.value}</dt><dd>{h.label}</dd></div>)}
+                </dl>
+                <div class="pv-foot">
+                  <div class="chips">{p.data.tools.slice(0, 5).map((tool) => <span class="chip">{tool}</span>)}</div>
+                  <span class="go">{c.open} <Fragment set:html={svg(icon.arrow)} /></span>
+                </div>
+              </div>
+            </a>
+          );
+        })}
+      </div>
     </div>
   </div>
 </section>
 
-<section class="tools alt">
-  <div class="container tools-row">
-    <span class="tools-label">{t(lang, 'tools.title')}</span>
-    {tools.map((tool) => <span class="tool">{tool}</span>)}
-  </div>
-</section>
-
-<section id="about">
-  <div class="container about-grid">
-    <ol class="card timeline">
-      {timeline.map((item) => (
-        <li><span class="when">{item.when}</span><strong>{item.what}</strong><span class="muted">{item.where}</span></li>
+<!-- ===== Process as a pipeline ===== -->
+<section id="services">
+  <div class="container">
+    <header class="sec reveal">
+      <span class="prompt">In&nbsp;[3]:</span>
+      <code class="sec-code">pipeline.<span class="fn">run</span>(raw_data)</code>
+      <h2>{c.processTitle}</h2>
+      <p>{c.processSub}</p>
+    </header>
+    <ol class="pipe">
+      {process.map((s, i) => (
+        <li class="node reveal" style={`--d:${i * 100}ms`}>
+          <code class="node-fn">{processFns[i]}</code>
+          <h3>{s.title[lang]}</h3>
+          <p>{s.desc[lang]}</p>
+          <span class="node-ex"># {c.example} {s.example[lang]}</span>
+        </li>
       ))}
     </ol>
-    <div>
-      <h2 class="bar-title">{t(lang, 'about.title')}</h2>
-      <p class="muted">{t(lang, 'about.p1')}</p>
-      <p class="muted">{t(lang, 'about.p2')}</p>
-      <p class="muted">{t(lang, 'about.p3')}</p>
-      <div class="stats">
-        <div class="card stat"><strong>{t(lang, 'about.year')}</strong><span>{t(lang, 'about.stat1')}</span></div>
-        <div class="card stat"><strong>{projects.length}</strong><span>{t(lang, 'about.stat2')}</span></div>
-        <div class="card stat"><strong>C1</strong><span>{t(lang, 'about.stat3')}</span></div>
-      </div>
+  </div>
+</section>
+
+<!-- ===== Tools heatmap ===== -->
+<section class="alt" id="tools">
+  <div class="container">
+    <header class="sec reveal">
+      <span class="prompt">In&nbsp;[4]:</span>
+      <code class="sec-code">pd.<span class="fn">crosstab</span>(tools, cases)</code>
+      <h2>{c.heatTitle}</h2>
+      <p>{c.heatSub}</p>
+    </header>
+    <div class="heat-wrap reveal">
+      <table class="heat">
+        <thead>
+          <tr>
+            <th></th>
+            {projects.map((p) => <th style={`--c:${theme(p.data.page).accent}`}>{theme(p.data.page).short[lang]}</th>)}
+            <th class="tot">{c.heatTotal}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {heatRows.map((r) => (
+            <tr>
+              <th>{r.tool}</th>
+              {projects.map((p) => {
+                const on = r.cases.includes(p);
+                return (
+                  <td class:list={['cell', { on }]} style={`--c:${theme(p.data.page).accent}`} tabindex={on ? 0 : undefined}
+                    data-tip={on ? c.heatUsed(r.tool, p.data.title) : undefined}>
+                    {on ? '1' : '0'}
+                  </td>
+                );
+              })}
+              <td class="tot"><span class="bar" style={`--w:${(r.cases.length / projects.length) * 100}%`}></span>{r.cases.length}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {alsoUse.length > 0 && <p class="also"><span>{c.heatAlso}</span> {alsoUse.join(' · ')}</p>}
     </div>
   </div>
 </section>
 
-<section id="contact" class="alt">
-  <div class="container narrow">
-    <div class="section-head">
-      <h2>{t(lang, 'contact.title')}</h2>
-      <p>{t(lang, 'contact.sub')}</p>
+<!-- ===== About + gantt ===== -->
+<section id="about">
+  <div class="container about-grid">
+    <div class="portrait reveal">
+      <img src="/photo.png" alt="Kevin Leichen" width="600" height="600" loading="lazy" />
     </div>
-    <form class="card form" id="contact-form" data-key={contact.web3formsKey} data-mail={contact.email}
-      data-sending={t(lang, 'contact.sending')} data-ok={t(lang, 'contact.ok')} data-err={t(lang, 'contact.err')}>
-      <div class="row">
-        <label>{t(lang, 'contact.name')}<input name="name" required autocomplete="name" /></label>
-        <label>{t(lang, 'contact.email')}<input name="email" type="email" required autocomplete="email" /></label>
+    <div class="about-copy">
+      <header class="sec reveal">
+        <span class="prompt">In&nbsp;[5]:</span>
+        <code class="sec-code">kevin.<span class="fn">describe</span>()</code>
+        <h2>{c.aboutTitle}</h2>
+      </header>
+      <p class="reveal">{t(lang, 'about.p1')}</p>
+      <p class="reveal">{t(lang, 'about.p2')}</p>
+      <p class="reveal">{t(lang, 'about.p3')}</p>
+      <table class="kv reveal">
+        <tr><th>{c.kv.year}</th><td>{t(lang, 'about.year')}</td></tr>
+        <tr><th>{c.kv.cases}</th><td>{projects.length}</td></tr>
+        <tr><th>{c.kv.english}</th><td>C1</td></tr>
+        <tr><th>{c.kv.city}</th><td>Buenos Aires</td></tr>
+      </table>
+    </div>
+
+    <figure class="fig gantt reveal">
+      <figcaption><span class="fig-title">{c.fig2}</span></figcaption>
+      <div class="g-rows">
+        {career.map((e, i) => {
+          const s = monthIdx(e.start), en = e.end ? monthIdx(e.end) : nowIdx;
+          return (
+            <div class="g-row" style={`--i:${i}`}>
+              <span class="g-label"><strong>{e.label[lang]}</strong><span>{e.where[lang]}</span></span>
+              <span class="g-track">
+                <span class:list={['g-bar', e.kind, { live: !e.end }]} style={`--s:${(s / span) * 100}%;--w:${((en - s + 1) / span) * 100}%`}></span>
+              </span>
+            </div>
+          );
+        })}
       </div>
-      <label>{t(lang, 'contact.message')}<textarea name="message" rows="5" required></textarea></label>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">{t(lang, 'contact.send')}</button>
+      <div class="g-axis">
+        <span></span>
+        <span class="g-ticks">
+          {years.map((y) => <span style={`left:${(monthIdx(`${y}-01`) / span) * 100}%`}>{y}</span>)}
+          <span class="now" style="left:100%">{c.now}</span>
+        </span>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<!-- ===== Contact ===== -->
+<section id="contact" class="alt">
+  <div class="container contact-grid">
+    <div class="reveal">
+      <header class="sec">
+        <span class="prompt">In&nbsp;[6]:</span>
+        <code class="sec-code">kevin.<span class="fn">contact</span>()</code>
+        <h2>{c.contactTitle}</h2>
+        <p>{c.contactSub}</p>
+      </header>
+      <div class="direct">
         <a class="btn btn-ghost" href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener">
-          <Fragment set:html={svg(icon.chat, 18)} /> {t(lang, 'contact.whatsapp')}
+          <Fragment set:html={svg(icon.chat)} /> {t(lang, 'contact.whatsapp')}
         </a>
+        <a class="btn btn-ghost" href={contact.github} target="_blank" rel="noopener"><Fragment set:html={svg(icon.github)} /> GitHub</a>
       </div>
-      <p class="status" aria-live="polite"></p>
+    </div>
+    <form class="card form reveal" id="contact-form" data-key={contact.web3formsKey} data-mail={contact.email}
+      data-sending={t(lang, 'contact.sending')} data-ok={t(lang, 'contact.ok')} data-err={t(lang, 'contact.err')}>
+      <div class="frow">
+        <label><span><code>name=</code> {t(lang, 'contact.name')}</span><input name="name" required autocomplete="name" /></label>
+        <label><span><code>email=</code> {t(lang, 'contact.email')}</span><input name="email" type="email" required autocomplete="email" /></label>
+      </div>
+      <label><span><code>message=</code> {t(lang, 'contact.message')}</span><textarea name="message" rows="5" required></textarea></label>
+      <button class="btn btn-primary mono-btn" type="submit">{c.send} <Fragment set:html={svg(icon.arrow)} /></button>
+      <p class="fstatus" aria-live="polite"></p>
     </form>
-    <p class="socials"><a href={contact.github} target="_blank" rel="noopener"><Fragment set:html={svg(icon.github, 20)} /> GitHub</a></p>
   </div>
 </section>
 
 <script>
+  // Contact form
   const form = document.getElementById('contact-form') as HTMLFormElement;
-  const status = form.querySelector('.status') as HTMLElement;
+  const status = form.querySelector('.fstatus') as HTMLElement;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const d = form.dataset;
@@ -174,76 +340,249 @@ const timeline = [
       status.textContent = d.err!;
     }
   });
+
+  // Fig. 1: hovering a row fills the detail panel.
+  const chart = document.querySelector('.chart') as HTMLElement | null;
+  if (chart) {
+    const panel = chart.querySelector('.detail') as HTMLElement;
+    const set = (sel: string, text: string) => { (panel.querySelector(sel) as HTMLElement).textContent = text; };
+    const show = (row: HTMLElement) => {
+      const d = row.dataset;
+      set('.tt-title', d.title!); set('.tt-before', d.before!); set('.tt-after', d.after!); set('.tt-detail', d.detail!);
+      panel.style.setProperty('--c', getComputedStyle(row).getPropertyValue('--c'));
+      chart.classList.add('focus');
+      chart.querySelectorAll('.row').forEach((r) => r.classList.toggle('on', r === row));
+    };
+    chart.querySelectorAll<HTMLElement>('.row').forEach((row) => {
+      row.addEventListener('mouseenter', () => show(row));
+      row.addEventListener('focus', () => show(row));
+    });
+    chart.addEventListener('mouseleave', () => chart.classList.remove('focus'));
+  }
+
+  // Cases dataframe: hovering a row swaps the preview card.
+  const rows = [...document.querySelectorAll<HTMLElement>('.df-row')];
+  const pvs = [...document.querySelectorAll<HTMLElement>('.pv')];
+  const pick = (i: string) => {
+    rows.forEach((r) => r.classList.toggle('on', r.dataset.i === i));
+    pvs.forEach((p) => p.classList.toggle('on', p.dataset.i === i));
+  };
+  rows.forEach((r) => {
+    r.addEventListener('mouseenter', () => pick(r.dataset.i!));
+    r.addEventListener('focus', () => pick(r.dataset.i!));
+  });
 </script>
 
 <style>
-  .hero { padding: 72px 0 96px; }
-  .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
-  .hello { color: var(--accent); font-weight: 600; font-size: 1.15rem; margin: 0 0 12px; }
-  h1 { font-size: clamp(2.6rem, 6vw, 4.2rem); font-weight: 800; }
-  h1 span { color: var(--accent); }
-  .pitch { color: var(--muted); font-size: 1.15rem; max-width: 34em; margin: 24px 0 36px; }
-  .ctas { display: flex; gap: 16px; flex-wrap: wrap; }
-  .photo-wrap { position: relative; width: min(100%, 400px); aspect-ratio: 1; justify-self: center; }
-  .photo-wrap img { position: absolute; inset: 18px; width: calc(100% - 36px); height: calc(100% - 36px); border-radius: 50%; object-fit: cover; }
-  .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: .5; }
-  .ring::after { content: ''; position: absolute; inset: -14px; border-radius: 50%; border: 1px dashed var(--border); }
-
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-  .service { padding: 32px; }
-  .service h3 { font-size: 1.3rem; margin: 22px 0 10px; }
-  .service p { margin: 0; }
-
-  .project { overflow: hidden; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; }
-  .project:hover { border-color: var(--accent); transform: translateY(-4px); }
-  .cover { position: relative; aspect-ratio: 16 / 10; background: #fff; }
-  .cover img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
-  .overlay { position: absolute; inset: 0; background: rgba(17, 26, 34, .7); display: grid; place-items: center; opacity: 0; transition: opacity .2s; }
-  .project:hover .overlay, .project:focus-visible .overlay { opacity: 1; }
-  .body { padding: 24px; }
-  .body h3 { font-size: 1.25rem; margin-bottom: 8px; }
-  .project:hover h3 { color: var(--accent); }
-  .body p { margin: 0 0 16px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-
-  .tools { padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-  .tools-row { display: flex; flex-wrap: wrap; gap: 14px 36px; justify-content: center; align-items: center; }
-  .tools-label { color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: .85rem; letter-spacing: .1em; }
-  .tool { color: var(--muted); font-weight: 600; font-size: 1.05rem; }
-
-  .about-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 64px; align-items: center; }
-  .timeline { list-style: none; margin: 0; padding: 28px 28px 28px 44px; display: grid; gap: 26px; position: relative; }
-  .timeline::before { content: ''; position: absolute; left: 28px; top: 36px; bottom: 36px; width: 2px; background: var(--border); }
-  .timeline li { position: relative; display: grid; gap: 2px; }
-  .timeline li::before { content: ''; position: absolute; left: -21px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-  .when { color: var(--accent); font-size: .85rem; font-weight: 600; }
-  .bar-title { font-size: clamp(2rem, 4vw, 2.75rem); border-left: 4px solid var(--accent); padding-left: 18px; margin-bottom: 24px; }
-  .about-grid p { font-size: 1.08rem; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
-  .stat { padding: 22px 12px; text-align: center; }
-  .stat strong { display: block; font-size: 2rem; color: var(--accent); }
-  .stat span { color: var(--muted); font-size: .9rem; }
-
-  .narrow { max-width: 760px; }
-  .form { padding: 32px; display: grid; gap: 18px; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  label { display: grid; gap: 8px; font-weight: 500; font-size: .95rem; }
-  input, textarea {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 14px; color: var(--text); font: inherit; resize: vertical;
+  /* ---------- Notebook hero ---------- */
+  .hero { padding: 64px 0 96px; }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; }
+  .prompt { font-family: var(--mono); font-size: .78rem; color: var(--faint); white-space: nowrap; }
+  .prompt.out { color: #e0a443; }
+  .cell-in, .cell-out { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: start; }
+  .cell-in .prompt, .cell-out .prompt { padding-top: 14px; text-align: right; }
+  .code {
+    margin: 0; padding: 12px 16px; background: rgba(23, 34, 44, .75); border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent); border-radius: 10px; font-family: var(--mono); font-size: .86rem; line-height: 1.7;
+    overflow-x: auto; color: var(--text);
   }
-  input:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
-  .form-actions { display: flex; gap: 16px; flex-wrap: wrap; }
-  .status { margin: 0; color: var(--accent); min-height: 1.6em; }
-  .socials { text-align: center; margin-top: 28px; }
-  .socials a { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); }
-  .socials a:hover { color: var(--accent); }
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .caret { display: inline-block; width: 8px; height: 1.1em; vertical-align: -3px; margin-left: 3px; background: var(--accent); animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .cell-out { margin-top: 22px; }
+  .who { display: flex; align-items: center; gap: 14px; margin: 8px 0 18px; }
+  .who img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); }
+  .who p { margin: 0; }
+  .role { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .role::after { content: 'open_to_work'; font-family: var(--mono); font-size: .68rem; font-weight: 500; color: #5ee08a; border: 1px solid rgba(94, 224, 138, .4); padding: 1px 7px; border-radius: 999px; }
+  .role-sub { color: var(--muted); font-size: .88rem; }
+  h1 { font-size: clamp(3rem, 7.4vw, 5.6rem); line-height: .95; }
+  .lede { font-size: clamp(1.25rem, 2.2vw, 1.6rem); line-height: 1.3; margin: 18px 0 12px; font-weight: 600; color: var(--accent); max-width: 22em; }
+  .pitch { color: var(--muted); font-size: 1.02rem; max-width: 34em; margin: 0 0 28px; }
+  .ctas { display: flex; gap: 10px; flex-wrap: wrap; }
 
-  @media (max-width: 900px) {
-    .hero-grid, .about-grid { grid-template-columns: 1fr; }
-    .photo-wrap { order: -1; width: min(70%, 300px); }
-    .timeline { order: 2; }
-    .grid3 { grid-template-columns: 1fr; }
-    .row { grid-template-columns: 1fr; }
+  /* ---------- Figures ---------- */
+  .fig { margin: 0; padding: 22px 22px 16px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 14px; position: relative; }
+  figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .fig-title { font-family: var(--mono); font-size: .82rem; color: var(--text); }
+  .legend { display: flex; gap: 14px; font-size: .74rem; color: var(--muted); font-family: var(--mono); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .lg { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .lg.before { border: 2px solid var(--faint); }
+  .lg.after { background: var(--accent); }
+  .rows { display: grid; gap: 4px; }
+  .row { display: grid; gap: 6px; padding: 9px 10px 11px; margin: 0 -10px; border-radius: 8px; transition: background .2s, opacity .25s; }
+  .chart.focus .row:not(.on) { opacity: .4; }
+  .row.on { background: var(--surface-2); }
+  .row-label { font-size: .88rem; display: flex; gap: 10px; align-items: baseline; }
+  .row-field { font-family: var(--mono); font-size: .7rem; color: var(--c); min-width: 6.5em; }
+  .track {
+    position: relative; height: 16px; margin-right: 44px;
+    background: repeating-linear-gradient(90deg, var(--border-soft) 0 1px, transparent 1px 25%);
+    background-size: calc(100% + 1px) 100%;
+  }
+  .track::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--border); }
+  .span { position: absolute; top: 50%; height: 3px; margin-top: -1.5px; left: var(--b); width: calc(var(--a) - var(--b)); background: linear-gradient(90deg, rgba(147, 165, 181, .25), var(--c)); transform-origin: 0 50%; }
+  .pt { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; }
+  .pt.before { left: var(--b); background: var(--bg); border: 2px solid var(--faint); }
+  .pt.after { left: var(--a); background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent); }
+  .val { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: .74rem; color: var(--c); }
+  .js .chart .span { transform: scaleX(0); transition: transform 1s var(--ease); transition-delay: calc(500ms + var(--i) * 140ms); }
+  .js .chart .pt.after { left: var(--b); transition: left 1s var(--ease); transition-delay: calc(500ms + var(--i) * 140ms); }
+  .js .chart.in .span { transform: none; }
+  .js .chart.in .pt.after { left: var(--a); }
+  .axis { display: flex; justify-content: space-between; margin: 4px 44px 0 0; font-family: var(--mono); font-size: .66rem; color: var(--faint); }
+  .detail { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border-soft); border-left: 3px solid var(--c); font-size: .86rem; }
+  .tt-title { font-weight: 600; margin-bottom: 4px; }
+  .tt-ba { display: flex; flex-wrap: wrap; gap: 2px 16px; font-family: var(--mono); font-size: .78rem; }
+  .tt-before { color: var(--muted); }
+  .tt-before::before { content: '○ '; }
+  .tt-after { color: var(--c); }
+  .tt-after::before { content: '● '; }
+  .tt-detail { margin-top: 6px; color: var(--muted); }
+  .hint { margin: 10px 0 0; font-size: .74rem; color: var(--faint); font-family: var(--mono); }
+
+  /* ---------- Section heads as notebook cells ---------- */
+  .sec { display: grid; grid-template-columns: 64px 1fr; column-gap: 12px; margin-bottom: 40px; max-width: 820px; }
+  .sec .prompt { text-align: right; padding-top: 2px; }
+  .sec-code { font-family: var(--mono); font-size: .86rem; color: var(--muted); }
+  .sec h2 { grid-column: 2; font-size: clamp(2rem, 4vw, 3rem); margin-top: 14px; }
+  .sec p { grid-column: 2; color: var(--muted); margin: 12px 0 0; font-size: 1.04rem; }
+
+  /* ---------- Dataframe + preview ---------- */
+  .df-wrap { display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: start; }
+  .df { font-size: .9rem; border: 1px solid var(--border-soft); border-radius: 12px; overflow: hidden; background: var(--bg); }
+  .df-head, .df-row { display: grid; grid-template-columns: 34px 1.6fr 1fr 1fr 1.2fr; gap: 12px; padding: 12px 14px; align-items: center; }
+  .df-head { font-family: var(--mono); font-size: .74rem; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); font-weight: 600; }
+  .df-row { border-bottom: 1px solid var(--border-soft); position: relative; transition: background .15s; }
+  .df-row:nth-of-type(even) { background: rgba(23, 34, 44, .45); }
+  .df-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); opacity: 0; transition: opacity .2s; }
+  .df-row.on { background: var(--surface-2); }
+  .df-row.on::before { opacity: 1; }
+  .idx { font-family: var(--mono); color: var(--faint); font-weight: 600; }
+  .df-case { font-weight: 600; }
+  .df-row.on .df-case { color: var(--c); }
+  .df-field, .df-method { color: var(--muted); font-size: .84rem; }
+  .df-result b { font-family: var(--mono); color: var(--c); font-weight: 600; display: block; font-size: 1rem; }
+  .df-result span { color: var(--faint); font-size: .74rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .df-shape { margin: 0; padding: 10px 14px; font-family: var(--mono); font-size: .72rem; color: var(--faint); }
+
+  .previews { display: grid; position: sticky; top: 84px; }
+  .pv { grid-area: 1 / 1; display: flex; flex-direction: column; background: var(--surface); border: 1px solid color-mix(in srgb, var(--c) 40%, var(--border-soft)); border-radius: 14px; overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(6px); transition: opacity .25s, transform .25s, visibility 0s .25s; }
+  .pv.on { opacity: 1; visibility: visible; transform: none; transition: opacity .25s, transform .25s; }
+  .pv-cover { background: var(--paper); padding: 16px; height: 210px; overflow: hidden; }
+  .pv-cover img { height: 100%; width: 100%; object-fit: contain; }
+  .pv-body { padding: 20px 22px 22px; }
+  .pv-meta { margin: 0 0 8px; font-family: var(--mono); font-size: .72rem; color: var(--c); }
+  .pv-meta span { color: var(--muted); }
+  .pv h3 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; }
+  .pv-sum { color: var(--muted); font-size: .9rem; margin: 8px 0 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 16px; padding: 12px 0; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+  .kpis dt { font-family: var(--mono); font-size: 1.15rem; color: var(--c); font-weight: 600; white-space: nowrap; }
+  .kpis dd { margin: 4px 0 0; font-size: .72rem; color: var(--muted); line-height: 1.35; }
+  .pv-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pv .chip { background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
+  .go { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: .9rem; color: var(--c); }
+
+  /* ---------- Pipeline ---------- */
+  .pipe { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .node { position: relative; padding: 20px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 12px; }
+  .node:not(:last-child)::after {
+    content: '→'; position: absolute; right: -22px; top: 22px; font-family: var(--mono); color: var(--accent); font-size: 1rem;
+  }
+  .node-fn { font-family: var(--mono); font-size: .76rem; color: var(--accent); background: var(--accent-soft); padding: 3px 8px; border-radius: 6px; }
+  .node h3 { font-size: 1.15rem; font-weight: 700; margin: 14px 0 8px; }
+  .node p { color: var(--muted); font-size: .9rem; margin: 0 0 12px; }
+  .node-ex { font-family: var(--mono); font-size: .72rem; color: var(--faint); }
+
+  /* ---------- Heatmap ---------- */
+  .heat-wrap { overflow-x: auto; padding-top: 34px; margin-top: -34px; }
+  .heat { border-collapse: separate; border-spacing: 4px; font-size: .86rem; min-width: 560px; }
+  .heat th { font-weight: 500; }
+  .heat thead th { font-family: var(--mono); font-size: .74rem; color: var(--c, var(--muted)); text-align: center; padding: 0 4px 8px; font-weight: 600; }
+  .heat tbody th { text-align: right; padding-right: 12px; color: var(--text); white-space: nowrap; font-family: var(--mono); font-size: .8rem; }
+  .cell { width: 96px; height: 34px; border-radius: 6px; text-align: center; font-family: var(--mono); font-size: .72rem; color: var(--faint); background: var(--bg); position: relative; transition: transform .15s; }
+  .cell.on { background: color-mix(in srgb, var(--c) 70%, transparent); color: rgba(0, 0, 0, .55); font-weight: 600; cursor: default; }
+  .cell.on:hover, .cell.on:focus-visible { transform: scale(1.08); z-index: 2; outline: none; }
+  .cell.on::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translate(-50%, 4px);
+    white-space: nowrap; background: #0b1116; color: var(--text); border: 1px solid var(--border); font-size: .74rem; font-weight: 400;
+    padding: 5px 9px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; font-family: var(--sans);
+  }
+  .cell.on:hover::after, .cell.on:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+  .tot { font-family: var(--mono); font-size: .76rem; color: var(--muted); width: 120px; padding-left: 10px; text-align: left; }
+  .tot .bar { display: inline-block; height: 8px; width: calc(var(--w) * .7); background: var(--accent); border-radius: 2px; margin-right: 8px; vertical-align: middle; opacity: .8; }
+  .also { margin: 20px 0 0; font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+  .also span { color: var(--faint); }
+
+  /* ---------- About ---------- */
+  .about-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 24px 64px; align-items: start; }
+  .portrait { aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; }
+  .about-copy .sec { margin-bottom: 20px; }
+  .about-copy > p { color: var(--muted); font-size: 1.03rem; margin: 0 0 12px 76px; }
+  .kv { margin: 22px 0 0 76px; border-collapse: collapse; font-family: var(--mono); font-size: .84rem; min-width: 300px; }
+  .kv th { text-align: left; color: var(--muted); font-weight: 400; padding: 7px 28px 7px 0; border-bottom: 1px solid var(--border-soft); }
+  .kv td { color: var(--accent); padding: 7px 0; border-bottom: 1px solid var(--border-soft); text-align: right; }
+  .gantt { grid-column: 1 / -1; margin-top: 32px; }
+  .g-rows { display: grid; gap: 10px; }
+  .g-row, .g-axis { display: grid; grid-template-columns: 260px 1fr; gap: 16px; align-items: center; }
+  .g-label { display: grid; font-size: .86rem; }
+  .g-label span { color: var(--muted); font-size: .76rem; }
+  .g-track { position: relative; height: 22px; border-bottom: 1px solid var(--border-soft); }
+  .g-bar { position: absolute; top: 3px; bottom: 3px; left: var(--s); width: max(var(--w), 10px); border-radius: 4px; background: var(--accent); }
+  .g-bar.work { background: #e0a443; }
+  .g-bar.live { background: linear-gradient(90deg, var(--accent) 85%, color-mix(in srgb, var(--accent) 20%, transparent)); }
+  .js .gantt .g-bar { transform: scaleX(0); transform-origin: 0 50%; transition: transform .9s var(--ease); transition-delay: calc(300ms + var(--i) * 120ms); }
+  .js .gantt.in .g-bar { transform: none; }
+  .g-ticks { position: relative; height: 18px; font-family: var(--mono); font-size: .68rem; color: var(--faint); }
+  .g-ticks span { position: absolute; top: 4px; }
+  .g-ticks .now { transform: translateX(-100%); color: var(--accent); }
+
+  /* ---------- Contact ---------- */
+  .contact-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: start; }
+  .direct { display: flex; flex-wrap: wrap; gap: 10px; margin-left: 76px; }
+  .form { padding: 26px; display: grid; gap: 16px; }
+  .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  label { display: grid; gap: 6px; font-size: .86rem; color: var(--muted); }
+  label code { font-family: var(--mono); color: var(--accent); font-size: .8rem; }
+  input, textarea {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 11px 13px; color: var(--text); font: inherit; resize: vertical; transition: border-color .2s;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .form .btn { justify-self: start; }
+  .mono-btn { font-family: var(--mono); }
+  .fstatus { margin: 0; color: var(--accent); min-height: 1.6em; font-family: var(--mono); font-size: .85rem; }
+
+  @media (max-width: 1020px) {
+    .hero-grid, .contact-grid { grid-template-columns: 1fr; }
+    .df-wrap { grid-template-columns: 1fr; }
+    .previews { position: static; }
+    .pipe { grid-template-columns: repeat(2, 1fr); }
+    .node:nth-child(2)::after { content: none; }
+  }
+  @media (max-width: 760px) {
+    .hero { padding-top: 32px; }
+    .cell-in, .cell-out, .sec { grid-template-columns: 1fr; }
+    .cell-in .prompt, .cell-out .prompt, .sec .prompt { text-align: left; padding: 0 0 6px; }
+    .sec h2, .sec p { grid-column: 1; }
+    .code { font-size: .72rem; }
+    .df-head { display: none; }
+    .df-row { grid-template-columns: 26px 1fr; gap: 4px 10px; }
+    .df-row > :not(.idx) { grid-column: 2; }
+    .about-grid { grid-template-columns: 1fr; }
+    .portrait { max-width: 260px; }
+    .about-copy > p, .kv, .direct { margin-left: 0; }
+    .kv { min-width: 0; width: 100%; }
+    .pipe { grid-template-columns: 1fr; gap: 22px; }
+    .node:not(:last-child)::after, .node:nth-child(2)::after { content: '↓'; right: auto; left: 22px; top: auto; bottom: -22px; }
+    .g-row, .g-axis { grid-template-columns: 1fr; gap: 4px; }
+    .g-axis > span:first-child { display: none; }
+    .frow { grid-template-columns: 1fr; }
+    .kpis dt { font-size: 1rem; white-space: normal; }
   }
 </style>

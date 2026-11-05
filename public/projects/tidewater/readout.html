@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tidewater · A/B test readout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  --paper: #f3f6f5; --surface: #fcfdfc; --ink: #10242b; --ink-2: #46585d; --muted: #6f7e81;
+  --line: #dbe2e1; --axis: #b9c4c3; --kelp: #1d6b5f; --kelp-soft: #dcebe7;
+  --old: #2a78d6; --new: #eb6834; --old-soft: rgba(42,120,214,.12); --new-soft: rgba(235,104,52,.14);
+  --bad: #b3261e; --good: #1d6b5f; --band: rgba(179,38,30,.08);
+  --display: "Young Serif", Georgia, serif; --body: "Public Sans", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 14px/1.45 var(--body); }
+.wrap { padding: 16px 20px 20px; max-width: 1040px; margin: 0 auto; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.eyebrow { font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--kelp); }
+h1 { font: 400 24px/1.2 var(--display); margin: 4px 0 0; }
+h2 { font: 400 19px/1.25 var(--display); margin: 0 0 4px; }
+h3 { font: 600 13px/1.3 var(--body); margin: 0 0 6px; color: var(--ink); }
+p { margin: 0 0 6px; color: var(--ink-2); }
+.note { font-size: 12.5px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; margin: 12px 0 14px; flex-wrap: wrap; }
+.tabs button, .seg button { font: 600 13px var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.seg { display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; border-radius: 0; padding: 6px 11px; font-size: 12.5px; }
+.seg button[aria-pressed="true"] { background: var(--kelp-soft); color: var(--kelp); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.grid { display: grid; gap: 12px; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.gw { grid-template-columns: 1.65fr 1fr; }
+.g2 { grid-template-columns: 1.15fr 1fr; }
+.lede { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.lede > div:first-child { max-width: 640px; }
+.kpi .l { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+.kpi .v { display: block; font: 400 24px/1.2 var(--display); margin: 4px 0 2px; }
+.kpi .s { font-size: 12.5px; color: var(--ink-2); }
+.up { color: var(--kelp); } .down { color: var(--bad); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+svg text { font: 11px var(--body); fill: var(--muted); }
+svg text.lab { fill: var(--ink-2); font-weight: 600; }
+.grid line, line.gl { stroke: var(--line); }
+line.axis { stroke: var(--axis); }
+.hit { fill: transparent; cursor: crosshair; }
+.receipts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.receipt { font: 12px/1.5 var(--mono); border: 1px dashed var(--axis); border-radius: 8px; padding: 10px; background: var(--paper); }
+.receipt .t { font-weight: 600; margin-bottom: 4px; }
+.receipt .r { display: flex; justify-content: space-between; }
+.receipt .tot { border-top: 1px dashed var(--axis); margin-top: 4px; padding-top: 4px; font-weight: 600; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.calc label { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin-top: 10px; }
+.calc input[type=range] { width: 100%; accent-color: var(--kelp); }
+.presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.presets button { font: 600 12px var(--body); border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 6px 9px; cursor: pointer; color: var(--ink-2); }
+.presets button:hover { border-color: var(--kelp); color: var(--kelp); }
+.out { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.out .box { background: var(--paper); border-radius: 10px; padding: 10px 12px; }
+.out .big { font: 400 22px/1.2 var(--display); }
+.num { font-family: var(--mono); }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: right; padding: 5px 4px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; }
+#tip { position: fixed; pointer-events: none; opacity: 0; background: var(--ink); color: var(--paper); padding: 8px 10px; border-radius: 8px; font-size: 12px; z-index: 10; min-width: 170px; transition: opacity .1s; }
+#tip .r { display: flex; justify-content: space-between; gap: 14px; }
+#tip b { display: block; margin-bottom: 3px; }
+.foot { margin-top: 12px; font-size: 11.5px; color: var(--muted); font-style: italic; }
+@media (max-width: 760px) {
+  .g3, .gw, .g2 { grid-template-columns: 1fr; }
+  .wrap { padding: 12px 16px 16px; }
+  h1 { font-size: 20px; }
+  .receipts, .out { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow" data-t="eyebrow"></div>
+    <h1 data-t="title"></h1>
+  </div>
+  <div class="legend"><span><i style="background:var(--old)"></i><span data-t="old"></span></span><span><i style="background:var(--new)"></i><span data-t="new"></span></span></div>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="result" aria-selected="true" data-t="tab1"></button>
+  <button role="tab" data-tab="fair" aria-selected="false" data-t="tab2"></button>
+  <button role="tab" data-tab="channels" aria-selected="false" data-t="tab3"></button>
+  <button role="tab" data-tab="next" aria-selected="false" data-t="tab4"></button>
+</nav>
+
+<section id="result">
+  <div class="grid g3" style="margin-bottom:12px">
+    <div class="panel kpi"><span class="l" data-t="k1"></span><span class="v up" id="k1"></span><span class="s" id="k1s"></span></div>
+    <div class="panel kpi"><span class="l" data-t="k2"></span><span class="v" id="k2"></span><span class="s" id="k2s"></span></div>
+    <div class="panel kpi"><span class="l" data-t="k3"></span><span class="v down" id="k3"></span><span class="s" id="k3s"></span></div>
+  </div>
+  <div class="grid gw">
+    <div class="panel">
+      <h3 data-t="cumTitle"></h3>
+      <svg class="chart" id="c-cum" viewBox="0 0 600 265" role="img"></svg>
+      <p class="note" data-t="cumNote"></p>
+    </div>
+    <div class="panel">
+      <h3 data-t="rcTitle"></h3>
+      <div class="receipts"><div class="receipt" id="rc-old"></div><div class="receipt" id="rc-new"></div></div>
+      <h3 style="margin-top:12px" data-t="survTitle"></h3>
+      <svg class="chart" id="c-surv" viewBox="0 0 340 120" role="img"></svg>
+    </div>
+  </div>
+</section>
+
+<section id="fair" hidden>
+  <div class="lede">
+    <div><h2 data-t="fairH"></h2><p data-t="fairP"></p></div>
+    <div class="seg" role="group"><button data-fix="before" aria-pressed="true" data-t="raw"></button><button data-fix="after" aria-pressed="false" data-t="fixed"></button></div>
+  </div>
+  <div class="grid gw">
+    <div class="panel">
+      <h3 data-t="andTitle"></h3>
+      <svg class="chart" id="c-and" viewBox="0 0 600 265" role="img"></svg>
+      <p class="note" id="and-note"></p>
+    </div>
+    <div class="panel">
+      <h3 data-t="splitTitle"></h3>
+      <svg class="chart" id="c-split" viewBox="0 0 340 200" role="img"></svg>
+      <p class="note" id="split-note"></p>
+    </div>
+  </div>
+</section>
+
+<section id="channels" hidden>
+  <div class="lede">
+    <div><h2 data-t="chH"></h2><p data-t="chP"></p></div>
+    <div class="seg" role="group"><button data-m="conv" aria-pressed="true" data-t="mConv"></button><button data-m="ret" aria-pressed="false" data-t="mRet"></button><button data-m="cpv" aria-pressed="false" data-t="mCpv"></button></div>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <h3 id="ch-title"></h3>
+      <svg class="chart" id="c-ch" viewBox="0 0 600 260" role="img"></svg>
+    </div>
+    <div class="panel" style="overflow-x:auto">
+      <h3 data-t="tblTitle"></h3>
+      <table><thead><tr><th data-t="thSrc"></th><th data-t="thSign"></th><th data-t="thRet"></th><th data-t="thCpv"></th></tr></thead><tbody id="t-ch"></tbody></table>
+      <p class="note" style="margin-top:8px" id="het-note"></p>
+    </div>
+  </div>
+</section>
+
+<section id="next" hidden>
+  <div class="lede"><div><h2 data-t="nxH"></h2><p data-t="nxP"></p></div></div>
+  <div class="grid gw">
+    <div class="panel">
+      <h3 data-t="curveTitle"></h3>
+      <svg class="chart" id="c-curve" viewBox="0 0 600 300" role="img"></svg>
+      <p class="note" data-t="curveNote"></p>
+    </div>
+    <div class="panel calc">
+      <h3 data-t="calcTitle"></h3>
+      <div class="presets"><button data-p="tested" data-t="pTested"></button><button data-p="a" data-t="pA"></button><button data-p="none" data-t="pNone"></button></div>
+      <label><span data-t="lLift"></span><span class="num" id="v-lift"></span></label>
+      <input type="range" id="lift" min="0" max="40" step="1" value="10">
+      <label><span data-t="lDisc"></span><span class="num" id="v-disc"></span></label>
+      <input type="range" id="disc" min="0" max="40" step="1" value="20">
+      <label><span data-t="lStay"></span></label>
+      <div class="seg" role="group" style="margin-top:4px"><button data-stay="old" aria-pressed="true" data-t="stayOld"></button><button data-stay="new" aria-pressed="false" data-t="stayNew"></button></div>
+      <div class="out">
+        <div class="box"><div class="note" data-t="oCpv"></div><div class="big" id="o-cpv"></div><div class="note" id="o-cpv-s"></div></div>
+        <div class="box"><div class="note" data-t="oYear"></div><div class="big" id="o-year"></div><div class="note" data-t="oYearS"></div></div>
+      </div>
+      <p class="note" data-t="calcNote"></p>
+    </div>
+  </div>
+</section>
+
+<p class="foot" data-t="foot"></p>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const D = {"android_daily":[{"day":"2026-07-20","control":290,"new":304},{"day":"2026-07-21","control":361,"new":334},{"day":"2026-07-22","control":338,"new":297},{"day":"2026-07-23","control":329,"new":305},{"day":"2026-07-24","control":326,"new":328},{"day":"2026-07-25","control":327,"new":288},{"day":"2026-07-26","control":322,"new":300},{"day":"2026-07-27","control":291,"new":92},{"day":"2026-07-28","control":284,"new":102},{"day":"2026-07-29","control":299,"new":88},{"day":"2026-07-30","control":318,"new":64},{"day":"2026-07-31","control":316,"new":97},{"day":"2026-08-01","control":322,"new":141},{"day":"2026-08-02","control":354,"new":313},{"day":"2026-08-03","control":308,"new":335},{"day":"2026-08-04","control":341,"new":342},{"day":"2026-08-05","control":320,"new":359},{"day":"2026-08-06","control":324,"new":300},{"day":"2026-08-07","control":331,"new":352},{"day":"2026-08-08","control":339,"new":336},{"day":"2026-08-09","control":297,"new":330},{"day":"2026-08-10","control":322,"new":322},{"day":"2026-08-11","control":350,"new":312},{"day":"2026-08-12","control":326,"new":325},{"day":"2026-08-13","control":317,"new":321},{"day":"2026-08-14","control":299,"new":314},{"day":"2026-08-15","control":317,"new":321},{"day":"2026-08-16","control":294,"new":283}],"split_by_platform":{"android":{"control":9017,"new":7658,"share_new":0.4593,"p":6.687067792499154e-26},"ios":{"control":12489,"new":12322,"share_new":0.4966,"p":0.28904636280850826},"web":{"control":26537,"new":26458,"share_new":0.4993,"p":0.7314703771745668},"android_after":{"control":7188,"new":7121,"share_new":0.4977,"p":0.5754071945275345}},"bug_window":{"start_utc":"2026-07-27T00:00Z","end_utc":"2026-08-02T00:00Z","excluded":2366,"unlinked_android_signups":103},"conversion":{"n_control":46214,"n_new":45901,"signups_control":2701,"signups_new":3347,"control":0.0584,"new":0.0729,"diff":0.0145,"lo":0.0113,"hi":0.0177,"lift":0.2476,"p":7.51440749831696e-19},"weekly_lift":[{"week_of":"2026-07-20","n_control":11868,"n_new":11830,"signups_control":666,"signups_new":878,"control":0.0561,"new":0.0742,"diff":0.0181,"lo":0.0118,"hi":0.0244,"lift":0.3226,"p":1.6491844592751922e-08,"lift_lo":0.1998,"lift_hi":0.458},{"week_of":"2026-07-27","n_control":10289,"n_new":9995,"signups_control":617,"signups_new":724,"control":0.06,"new":0.0724,"diff":0.0125,"lo":0.0056,"hi":0.0193,"lift":0.2079,"p":0.0003526509870487725,"lift_lo":0.0877,"lift_hi":0.3386},{"week_of":"2026-08-03","n_control":12013,"n_new":12044,"signups_control":738,"signups_new":848,"control":0.0614,"new":0.0704,"diff":0.009,"lo":0.0027,"hi":0.0152,"lift":0.1461,"p":0.005034349500505661,"lift_lo":0.0423,"lift_hi":0.2613},{"week_of":"2026-08-10","n_control":11774,"n_new":11764,"signups_control":666,"signups_new":882,"control":0.0566,"new":0.075,"diff":0.0184,"lo":0.0121,"hi":0.0247,"lift":0.3255,"p":1.2179750853052895e-08,"lift_lo":0.2022,"lift_hi":0.4605}],"per_subscriber":{"control":{"subscribers":2701,"active_wk8":0.6027,"boxes":5.41,"skips":0.59,"discount":20.0,"refunds":5.67,"revenue":381.08,"contribution":96.36,"list_price":75.13},"new_flow":{"subscribers":3347,"active_wk8":0.5351,"boxes":5.04,"skips":0.54,"discount":37.01,"refunds":5.47,"revenue":331.03,"contribution":69.57,"list_price":74.02}},"per_visitor":{"converted":{"control":0.0584,"new":0.0729,"diff":0.0145,"lo":0.0113,"hi":0.0177},"active_wk8":{"control":0.0352,"new":0.039,"diff":0.0038,"lo":0.0013,"hi":0.0062},"boxes":{"control":0.3163,"new":0.3678,"diff":0.0515,"lo":0.0327,"hi":0.0704},"discount":{"control":1.1689,"new":2.6989,"diff":1.53,"lo":1.4283,"hi":1.6317},"revenue":{"control":22.2726,"new":24.1378,"diff":1.8653,"lo":0.4986,"hi":3.2319},"contribution":{"control":5.6315,"new":5.0727,"diff":-0.5589,"lo":-0.905,"hi":-0.2128}},"weekly_contribution_per_visitor":{"control":[0.0831,0.9356,0.8618,0.8337,0.7986,0.7443,0.6963,0.6782],"new":[-1.1509,1.0778,1.018,0.9325,0.8656,0.8199,0.7774,0.7323]},"by_source":[{"source":"Paid social","visitors":28856,"signups_old":561,"signups_new":861,"conv_old":0.0388,"conv_new":0.0597,"conv_lo":0.0159,"conv_hi":0.0259,"ret_old":0.5758,"ret_new":0.4239,"ret_lo":-0.2044,"ret_hi":-0.0992,"cpv_old":3.7315,"cpv_new":3.254,"cpv_lo":-0.9882,"cpv_hi":0.0332,"flag":""},{"source":"Organic search","visitors":24765,"signups_old":757,"signups_new":902,"conv_old":0.0608,"conv_new":0.0733,"conv_lo":0.0062,"conv_hi":0.0187,"ret_old":0.6446,"ret_new":0.5854,"ret_lo":-0.1062,"ret_hi":-0.0124,"cpv_old":6.1515,"cpv_new":5.6009,"cpv_lo":-1.2506,"cpv_hi":0.1494,"flag":""},{"source":"Paid search","visitors":15778,"signups_old":598,"signups_new":660,"conv_old":0.0754,"conv_new":0.0841,"conv_lo":0.0002,"conv_hi":0.0171,"ret_old":0.5936,"ret_new":0.5682,"ret_lo":-0.0801,"ret_hi":0.0291,"cpv_old":7.1566,"cpv_new":6.1424,"cpv_lo":-1.9316,"cpv_hi":-0.0969,"flag":""},{"source":"Email","visitors":10687,"signups_old":291,"signups_new":335,"conv_old":0.0539,"conv_new":0.0633,"conv_lo":0.0004,"conv_hi":0.0183,"ret_old":0.567,"ret_new":0.5881,"ret_lo":-0.0567,"ret_hi":0.0988,"cpv_old":5.0306,"cpv_new":4.8545,"cpv_lo":-1.1555,"cpv_hi":0.8032,"flag":""},{"source":"Referral","visitors":8848,"signups_old":408,"signups_new":482,"conv_old":0.0923,"conv_new":0.1089,"conv_lo":0.004,"conv_hi":0.0291,"ret_old":0.5882,"ret_new":0.556,"ret_lo":-0.0975,"ret_hi":0.033,"cpv_old":8.4528,"cpv_new":7.9456,"cpv_lo":-1.8529,"cpv_hi":0.8385,"flag":"wide CI on money"},{"source":"Unknown","visitors":3181,"signups_old":86,"signups_new":107,"conv_old":0.0545,"conv_new":0.0667,"conv_lo":-0.0044,"conv_hi":0.0288,"ret_old":0.6628,"ret_new":0.5421,"ret_lo":-0.2589,"ret_hi":0.0175,"cpv_old":5.4051,"cpv_new":4.9164,"cpv_lo":-2.3437,"cpv_hi":1.3664,"flag":"too thin"}],"heterogeneity_p":{"signups":0.08,"money":0.9},"assumptions":{"margin":0.3,"visitors_per_year":1200000,"typical_box":64.95},"survival":{"control":[1.0,0.8434,0.7882,0.7497,0.7157,0.6731,0.6335,0.6027],"new_flow":[1.0,0.7888,0.7434,0.6926,0.6486,0.6074,0.5683,0.5351]}};
+const lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'es';
+document.documentElement.lang = lang;
+const T = {
+  es: {
+    eyebrow: 'Tidewater Kitchen Co. · Test A/B del registro · 20 jul – 16 ago 2026',
+    title: '¿Conviene lanzar el nuevo registro?',
+    old: 'Flujo viejo: 4 pantallas, $20 off', new: 'Flujo nuevo: 2 pantallas, 50% off',
+    tab1: 'Resultado', tab2: '¿El test fue justo?', tab3: 'Por canal', tab4: 'Próximo test',
+    k1: 'Tasa de registro (7 días)', k2: 'Siguen suscritos en la semana 8', k3: 'Ganancia por visitante, 8 semanas',
+    cumTitle: 'Ganancia acumulada por visitante que vio la página',
+    cumNote: 'El flujo nuevo arranca $1,23 abajo en la semana 1 por la caja a mitad de precio. Después gana un poco más cada semana, pero en la semana 8 sigue $0,56 abajo. Pasá el mouse para ver cada semana.',
+    rcTitle: 'La primera caja, con cada oferta',
+    survTitle: 'Suscriptores que siguen activos, semana a semana',
+    fairH: 'Casi sí, una vez que se saca una semana rota en Android.',
+    fairP: 'Un test 50/50 sano reparte casi igual a la gente entre grupos. Acá faltaban unos 1.600 visitantes en el flujo nuevo. Todo el hueco venía de una versión de la app de Android que dejó de registrar las visitas al flujo nuevo (la gente igual lo veía).',
+    raw: 'Datos crudos', fixed: 'Después del arreglo',
+    andTitle: 'Visitantes de Android por día, por grupo',
+    splitTitle: 'Porcentaje de visitantes en el flujo nuevo',
+    andBefore: 'Los visitantes del flujo nuevo caen de unos 320 a unos 90 por día mientras el viejo casi no se mueve. Franja roja: app 6.14.0 en producción.',
+    andAfter: 'Saqué a todos los visitantes de Android que llegaron esa semana, de los dos grupos por igual (2.366 personas, 2,5% del test).',
+    splitBad: 'Roto: una diferencia así aparece por azar menos de 1 vez en un millón.',
+    splitOk: 'Sano: 49,8% / 50,2%, dentro de lo esperable por azar (p = 0,30).',
+    fair5050: '50/50 justo', leftOut: 'fuera del análisis', all: 'Todos',
+    chH: 'La misma historia en todos los canales: más registros, menos plata.',
+    chP: 'Cada punto es la diferencia flujo nuevo menos viejo, con su rango probable (95%). Cada canal tiene pocos cientos de registros por grupo, así que leé los rangos, no solo los puntos.',
+    mConv: 'Registros', mRet: 'Retención sem. 8', mCpv: 'Ganancia / visitante',
+    chTconv: 'Diferencia en tasa de registro (puntos)', chTret: 'Diferencia en suscriptos activos en la semana 8 (puntos)', chTcpv: 'Diferencia en ganancia por visitante en 8 semanas ($)',
+    tblTitle: 'Viejo → nuevo, por canal', thSrc: 'Canal', thSign: 'Registro', thRet: 'Activos sem. 8', thCpv: '$ / visitante',
+    het: 'Una prueba directa no encuentra evidencia de que el efecto en la ganancia cambie entre canales (p ≈ 0,9). "Sin dato" es demasiado chico para leerlo.',
+    nxH: 'No lanzarlo así. Probar por separado las dos cosas que cambió.',
+    nxP: 'El test cambió la cantidad de pantallas y el descuento al mismo tiempo, así que no puede decir cuál trajo los registros. El 50% off es lo que cuesta la plata. Esta calculadora muestra qué tendría que pasar para que una versión nueva convenga.',
+    curveTitle: 'Ganancia anual vs. flujo viejo, según cuánto suban los registros',
+    curveNote: 'Primeras 8 semanas de los clientes de un año (1,2 M visitantes). El punto marca tu elección; la línea punteada es el flujo viejo. Es una ilustración con los números del test, no un pronóstico.',
+    calcTitle: 'Armá la próxima versión',
+    pTested: 'Lo que se probó', testedDot: 'Lo probado (50% off)', pA: 'Próximo test: 2 pantallas + $20', pNone: 'Sin descuento',
+    lLift: 'Suba de registros vs. flujo viejo', lDisc: 'Descuento en la primera caja', lStay: 'Los nuevos suscriptos se quedan como…',
+    stayOld: 'los del flujo viejo', stayNew: 'los del flujo nuevo',
+    oCpv: 'Ganancia por visitante (8 sem.)', oYear: 'Por año vs. flujo viejo', oYearS: 'con 1,2 M visitantes',
+    calcNote: 'Valor de un suscripto en 8 semanas antes del descuento: $116,36 si se comporta como los del flujo viejo y $106,58 como los del nuevo (cancelan antes). Margen: 30% del precio de la caja.',
+    receipt: ['Precio', 'Margen 30%', 'Descuento', 'Ganamos'],
+    rOld: 'Viejo: $20 off', rNew: 'Nuevo: 50% off',
+    week: 'Semana', wk: 'sem', soFar: 'acumulado', gap: 'Diferencia', thisWeek: 'Esa semana',
+    active: 'activos', signups: 'registros', visitors: 'visitantes', range: 'Rango probable',
+    luck: 'Prob. de un desvío así por azar', million: '< 1 en un millón',
+    k1s: (l, lo, hi) => `+${l}% de registros (rango probable +${lo}% a +${hi}%). Real, no es ruido.`,
+    k2s: 'Los del flujo nuevo cancelan antes, sobre todo en redes sociales pagas.',
+    k3s: (d, y) => `${d} por visitante (−10%). Lanzado a todos: ${y} al año en las primeras 8 semanas.`,
+    foot: 'Escenario con datos sintéticos. Tidewater Kitchen Co. es una empresa ficticia.',
+    src: { 'Paid social': 'Redes pagas', 'Organic search': 'Búsqueda orgánica', 'Paid search': 'Búsqueda paga', 'Email': 'Email', 'Referral': 'Referidos', 'Unknown': 'Sin dato' },
+    platform: { web: 'Web', ios: 'iOS', android: 'Android' },
+    cmp: (a, b) => `${a} → ${b}`,
+  },
+  en: {
+    eyebrow: 'Tidewater Kitchen Co. · Signup A/B test · 20 Jul – 16 Aug 2026',
+    title: 'Should they ship the new signup flow?',
+    old: 'Old flow: 4 screens, $20 off', new: 'New flow: 2 screens, 50% off',
+    tab1: 'Result', tab2: 'Was the test fair?', tab3: 'By channel', tab4: 'Next test',
+    k1: 'Signup rate (7 days)', k2: 'Still subscribed at week 8', k3: 'Money per visitor, 8 weeks',
+    cumTitle: 'Money made per visitor who saw the page, building up',
+    cumNote: 'The new flow starts $1.23 behind in week 1 because of the half-price box. It then earns slightly more each week, but is still $0.56 behind at week 8. Hover to see each week.',
+    rcTitle: 'The first box, under each offer',
+    survTitle: 'Subscribers still active, week by week',
+    fairH: 'Mostly yes, once one broken week on Android is taken out.',
+    fairP: 'A healthy 50/50 test splits people almost evenly. This one was about 1,600 visitors short in the new flow. The whole gap came from one Android app release that stopped logging visits to the new flow (people still saw it).',
+    raw: 'Raw data', fixed: 'After the fix',
+    andTitle: 'Android visitors per day, by group',
+    splitTitle: 'Share of visitors in the new flow',
+    andBefore: 'New-flow visitors fall from about 320 to about 90 a day while the old flow barely moves. Red band: app 6.14.0 live.',
+    andAfter: 'I left out every Android visitor who arrived that week, from both groups equally (2,366 people, 2.5% of the test).',
+    splitBad: 'Broken: a gap this big happens by luck less than once in a million.',
+    splitOk: 'Healthy: 49.8% / 50.2%, well within chance (p = 0.30).',
+    fair5050: 'fair 50/50', leftOut: 'left out of the analysis', all: 'All',
+    chH: 'Same story in every channel: more signups, less money.',
+    chP: 'Each dot is the new flow minus the old, with its likely range (95%). Each channel has only a few hundred signups per group, so read the ranges, not just the dots.',
+    mConv: 'Signups', mRet: 'Week-8 retention', mCpv: 'Money / visitor',
+    chTconv: 'Difference in signup rate (points)', chTret: 'Difference in still subscribed at week 8 (points)', chTcpv: 'Difference in money per visitor over 8 weeks ($)',
+    tblTitle: 'Old → new, by channel', thSrc: 'Channel', thSign: 'Signup', thRet: 'Active wk 8', thCpv: '$ / visitor',
+    het: 'A direct test finds no evidence that the money effect differs between channels (p ≈ 0.9). "Unknown" is too thin to read.',
+    nxH: 'Don’t ship it as is. Test the two changes separately.',
+    nxP: 'The test changed the number of screens and the discount at the same time, so it can’t say which one brought the signups. The 50% off is what costs the money. This calculator shows what a new version would need to do to pay off.',
+    curveTitle: 'Yearly money vs. the old flow, by how much signups rise',
+    curveNote: 'First 8 weeks of a year of customers (1.2M visitors). The dot is your choice; the dashed line is the old flow. An illustration built on the test’s numbers, not a forecast.',
+    calcTitle: 'Design the next version',
+    pTested: 'What was tested', testedDot: 'Tested (50% off)', pA: 'Next test: 2 screens + $20', pNone: 'No discount',
+    lLift: 'Signup lift vs. old flow', lDisc: 'First-box discount', lStay: 'New subscribers stay like…',
+    stayOld: 'old-flow ones', stayNew: 'new-flow ones',
+    oCpv: 'Money per visitor (8 wks)', oYear: 'Per year vs. old flow', oYearS: 'at 1.2M visitors',
+    calcNote: 'Value of a subscriber over 8 weeks before the discount: $116.36 if they behave like old-flow signups, $106.58 like new-flow ones (they cancel sooner). Margin: 30% of the box price.',
+    receipt: ['Box price', 'Margin 30%', 'Discount', 'We make'],
+    rOld: 'Old: $20 off', rNew: 'New: 50% off',
+    week: 'Week', wk: 'wk', soFar: 'so far', gap: 'Gap', thisWeek: 'That week',
+    active: 'active', signups: 'signups', visitors: 'visitors', range: 'Likely range',
+    luck: 'Chance of a gap this big by luck', million: '< 1 in a million',
+    k1s: (l, lo, hi) => `+${l}% more signups (likely range +${lo}% to +${hi}%). Real, not noise.`,
+    k2s: 'New-flow signups cancel sooner, above all from paid social.',
+    k3s: (d, y) => `${d} per visitor (−10%). Rolled out to everyone: ${y} a year in the first 8 weeks.`,
+    foot: 'Scenario with synthetic data. Tidewater Kitchen Co. is a fictional company.',
+    src: { 'Paid social': 'Paid social', 'Organic search': 'Organic search', 'Paid search': 'Paid search', 'Email': 'Email', 'Referral': 'Referral', 'Unknown': 'Unknown' },
+    platform: { web: 'Web', ios: 'iOS', android: 'Android' },
+    cmp: (a, b) => `${a} → ${b}`,
+  }
+}[lang];
+document.querySelectorAll('[data-t]').forEach(n => { const v = T[n.dataset.t]; if (typeof v === 'string') n.textContent = v; });
+
+const loc = lang === 'es' ? 'es-AR' : 'en-US';
+const nf = (x, d = 0) => x.toLocaleString(loc, { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (x, d = 1) => nf(x * 100, d) + '%';
+const usd = (x, d = 2) => (x < 0 ? '−$' : '$') + nf(Math.abs(x), d);
+const sUsd = (x, d = 2) => (x >= 0 ? '+$' : '−$') + nf(Math.abs(x), d);
+const sPts = (x, d = 1) => (x >= 0 ? '+' : '−') + nf(Math.abs(x * 100), d);
+const bigUsd = x => { const a = Math.abs(x), s = x < 0 ? '−' : '+'; return a >= 1e6 ? `${s}$${nf(a / 1e6, 2)} M` : `${s}$${nf(Math.round(a / 1e3))}k`; };
+const fmtDay = s => new Date(s + 'T12:00:00').toLocaleDateString(loc, { day: 'numeric', month: 'short' });
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+function el(tag, a = {}, p) { const n = document.createElementNS(NS, tag); for (const k in a) n.setAttribute(k, a[k]); if (p) p.appendChild(n); return n; }
+function txt(p, x, y, s, a = {}) { const t = el('text', { x, y, ...a }, p); t.textContent = s; return t; }
+function clear(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+const tip = $('#tip');
+function showTip(e, h) { tip.innerHTML = h; tip.style.opacity = 1; const w = tip.offsetWidth, hh = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 6) x = e.clientX - w - 14; if (y + hh > innerHeight - 6) y = e.clientY - hh - 14; tip.style.left = x + 'px'; tip.style.top = Math.max(4, y) + 'px'; }
+function hideTip() { tip.style.opacity = 0; }
+const row = (k, v, c) => `<div class="r"><span>${c ? `<span class="dot" style="background:${c}"></span>` : ''}${k}</span><span>${v}</span></div>`;
+function svgPt(svg, e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+function yGrid(svg, y, ticks, x0, x1, fmt) { ticks.forEach(t => { el('line', { x1: x0, x2: x1, y1: y(t), y2: y(t), class: 'gl' }, svg); txt(svg, x0 - 6, y(t) + 4, fmt(t), { 'text-anchor': 'end' }); }); }
+
+/* line chart with crosshair */
+function lineChart(svg, { xs, series, yTicks, yFmt, xLab, tipT, tipR, zero, band, gaps, m = { l: 46, r: 56, t: 10, b: 26 } }) {
+  clear(svg);
+  const W = svg.viewBox.baseVal.width, H = svg.viewBox.baseVal.height;
+  const x = lin(0, xs.length - 1, m.l, W - m.r), y = lin(yTicks[0], yTicks[yTicks.length - 1], H - m.b, m.t);
+  const step = x(1) - x(0);
+  if (band) el('rect', { x: x(band[0]) - step / 2, y: m.t, width: x(band[1]) - x(band[0]) + step, height: H - m.b - m.t, fill: css('--band') }, svg);
+  if (band && band[2]) txt(svg, (x(band[0]) + x(band[1])) / 2, m.t + 14, band[2], { 'text-anchor': 'middle', class: 'lab' });
+  yGrid(svg, y, yTicks, m.l, W - m.r, yFmt);
+  if (zero) el('line', { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), class: 'axis', 'stroke-width': 1.3 }, svg);
+  el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axis' }, svg);
+  xs.forEach((v, i) => { const lab = xLab(v, i); if (lab) txt(svg, x(i), H - m.b + 15, lab, { 'text-anchor': 'middle' }); });
+  const cross = el('line', { y1: m.t, y2: H - m.b, stroke: css('--axis'), 'stroke-dasharray': '3 3', opacity: 0 }, svg);
+  const dots = series.map(s => {
+    let d = '', pen = false;
+    s.values.forEach((v, i) => { if (v == null || (gaps && gaps(i))) { pen = false; return; } d += `${pen ? 'L' : 'M'}${x(i)},${y(v)}`; pen = true; });
+    el('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    if (s.markers) s.values.forEach((v, i) => el('circle', { cx: x(i), cy: y(v), r: 4, fill: s.color, stroke: css('--surface'), 'stroke-width': 2 }, svg));
+    if (s.end) { const i = s.values.length - 1; txt(svg, x(i) + 9, y(s.values[i]) + 4 + (s.dy || 0), s.end(s.values[i]), { class: 'lab' }); }
+    return el('circle', { r: 5.5, fill: s.color, stroke: css('--surface'), 'stroke-width': 2, opacity: 0 }, svg);
+  });
+  const hit = el('rect', { x: m.l - step / 2, y: m.t, width: W - m.l - m.r + step, height: H - m.t - m.b, class: 'hit' }, svg);
+  hit.addEventListener('pointermove', e => {
+    const p = svgPt(svg, e); const i = Math.max(0, Math.min(xs.length - 1, Math.round((p.x - m.l) / step)));
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', 1);
+    series.forEach((s, k) => { const v = s.values[i]; const ok = v != null && !(gaps && gaps(i)); dots[k].setAttribute('cx', x(i)); dots[k].setAttribute('cy', ok ? y(v) : 0); dots[k].setAttribute('opacity', ok ? 1 : 0); });
+    showTip(e, `<b>${tipT(i)}</b>${tipR(i)}`);
+  });
+  hit.addEventListener('pointerleave', () => { hideTip(); cross.setAttribute('opacity', 0); dots.forEach(d => d.setAttribute('opacity', 0)); });
+}
+
+/* ---------- RESULT ---------- */
+const C = D.conversion, PV = D.per_visitor, PS = D.per_subscriber, A = D.assumptions, VIS = A.visitors_per_year;
+$('#k1').textContent = T.cmp(pct(C.control, 2), pct(C.new, 2));
+$('#k1s').textContent = T.k1s(nf(C.lift * 100), nf(C.lo / C.control * 100), nf(C.hi / C.control * 100));
+$('#k2').innerHTML = `${pct(PS.control.active_wk8, 0)} → <span class="down">${pct(PS.new_flow.active_wk8, 0)}</span>`;
+$('#k2s').textContent = T.k2s;
+$('#k3').textContent = T.cmp(usd(PV.contribution.control), usd(PV.contribution.new));
+$('#k3s').textContent = T.k3s(sUsd(PV.contribution.diff), bigUsd(PV.contribution.diff * VIS));
+const cs = a => { let s = 0; return a.map(v => (s += v)); };
+const WC = D.weekly_contribution_per_visitor, cumO = cs(WC.control), cumN = cs(WC.new);
+const wks = [1, 2, 3, 4, 5, 6, 7, 8];
+function drawCum() {
+  lineChart($('#c-cum'), {
+    xs: wks, yTicks: [-2, 0, 2, 4, 6], yFmt: v => usd(v, 0), zero: true, xLab: v => `${T.wk} ${v}`,
+    series: [{ values: cumO, color: css('--old'), markers: true, end: v => usd(v), dy: -5 }, { values: cumN, color: css('--new'), markers: true, end: v => usd(v), dy: 7 }],
+    tipT: i => `${T.week} ${i + 1}`,
+    tipR: i => row(`${T.old.split(':')[0]}, ${T.soFar}`, usd(cumO[i]), css('--old')) + row(`${T.new.split(':')[0]}, ${T.soFar}`, usd(cumN[i]), css('--new')) + row(T.gap, sUsd(cumN[i] - cumO[i])) + row(T.thisWeek, `${usd(WC.control[i])} / ${usd(WC.new[i])}`)
+  });
+}
+function receipt(id, title, color, disc) {
+  const p = A.typical_box, m = p * A.margin, net = m - disc, R = T.receipt;
+  $(id).innerHTML = `<div class="t"><span class="dot" style="background:${color}"></span>${title}</div>
+    <div class="r"><span>${R[0]}</span><span>${usd(p)}</span></div><div class="r"><span>${R[1]}</span><span>${usd(m)}</span></div>
+    <div class="r"><span>${R[2]}</span><span>−${usd(disc)}</span></div><div class="r tot"><span>${R[3]}</span><span class="${net < 0 ? 'down' : ''}">${usd(net)}</span></div>`;
+}
+receipt('#rc-old', T.rOld, 'var(--old)', 20);
+receipt('#rc-new', T.rNew, 'var(--new)', Math.round(A.typical_box * 50) / 100);
+function drawSurv() {
+  const S = D.survival;
+  lineChart($('#c-surv'), {
+    xs: wks, yTicks: [0.4, 0.6, 0.8, 1], yFmt: v => pct(v, 0), xLab: v => v, m: { l: 38, r: 40, t: 8, b: 22 },
+    series: [{ values: S.control, color: css('--old'), end: v => pct(v, 0), dy: -4 }, { values: S.new_flow, color: css('--new'), end: v => pct(v, 0), dy: 6 }],
+    tipT: i => `${T.week} ${i + 1}`, tipR: i => row(T.old.split(':')[0], pct(S.control[i], 1), css('--old')) + row(T.new.split(':')[0], pct(S.new_flow[i], 1), css('--new'))
+  });
+}
+
+/* ---------- FAIR ---------- */
+let fix = 'before';
+const AD = D.android_daily, isBug = i => AD[i].day >= '2026-07-27' && AD[i].day <= '2026-08-01';
+const bugI = AD.map((d, i) => isBug(i) ? i : -1).filter(i => i >= 0);
+function drawAndroid() {
+  const after = fix === 'after';
+  lineChart($('#c-and'), {
+    xs: AD.map(d => d.day), yTicks: [0, 100, 200, 300, 400], yFmt: v => nf(v), xLab: (v, i) => i % 4 === 0 ? fmtDay(v) : '',
+    band: [bugI[0], bugI[bugI.length - 1], after ? T.leftOut : '6.14.0'], gaps: after ? isBug : null, m: { l: 40, r: 16, t: 10, b: 26 },
+    series: [{ values: AD.map(d => d.control), color: css('--old') }, { values: AD.map(d => d.new), color: css('--new') }],
+    tipT: i => fmtDay(AD[i].day) + (isBug(i) ? ' · app 6.14.0' : ''),
+    tipR: i => row(T.old.split(':')[0], nf(AD[i].control), css('--old')) + row(T.new.split(':')[0], nf(AD[i].new), css('--new')) + row('% ' + T.new.split(':')[0].toLowerCase(), pct(AD[i].new / (AD[i].control + AD[i].new), 0)) + (after && isBug(i) ? `<div style="margin-top:4px">${T.leftOut}</div>` : '')
+  });
+  $('#and-note').textContent = after ? T.andAfter : T.andBefore;
+}
+function drawSplit() {
+  const svg = $('#c-split'); clear(svg);
+  const P = D.split_by_platform, after = fix === 'after';
+  const allBefore = { control: P.web.control + P.ios.control + P.android.control, new: P.web.new + P.ios.new + P.android.new };
+  const allAfter = { control: P.web.control + P.ios.control + P.android_after.control, new: P.web.new + P.ios.new + P.android_after.new };
+  const rows = [[T.platform.web, P.web], [T.platform.ios, P.ios], [T.platform.android, after ? P.android_after : P.android], [T.all, after ? { ...allAfter, p: 0.30 } : { ...allBefore, p: 1e-7 }]]
+    .map(([n, s]) => [n, { ...s, share_new: s.new / (s.control + s.new) }]);
+  const W = 340, ml = 70, mr = 50, mt = 26, rh = 40;
+  const x = lin(0.44, 0.52, ml, W - mr);
+  [0.44, 0.46, 0.48, 0.5, 0.52].forEach(t => { el('line', { x1: x(t), x2: x(t), y1: mt - 4, y2: mt + rh * 4 - 10, class: 'gl' }, svg); txt(svg, x(t), mt + rh * 4 + 4, pct(t, 0), { 'text-anchor': 'middle' }); });
+  el('line', { x1: x(.5), x2: x(.5), y1: mt - 8, y2: mt + rh * 4 - 8, stroke: css('--ink-2'), 'stroke-dasharray': '4 3' }, svg);
+  txt(svg, x(.5), mt - 12, T.fair5050, { 'text-anchor': 'middle' });
+  rows.forEach(([name, s], i) => {
+    const cy = mt + i * rh + 12, bad = s.p < 0.001, col = bad ? css('--bad') : css('--new');
+    txt(svg, ml - 10, cy + 4, name, { 'text-anchor': 'end', class: 'lab' });
+    const a = x(Math.max(0.44, Math.min(s.share_new, .5))), b = x(Math.max(s.share_new, .5));
+    el('rect', { x: a, y: cy - 6, width: Math.max(2, b - a), height: 12, rx: 4, fill: col, opacity: .35 }, svg);
+    el('circle', { cx: x(Math.max(0.44, s.share_new)), cy, r: 5, fill: col, stroke: css('--surface'), 'stroke-width': 2 }, svg);
+    txt(svg, W - mr + 8, cy + 4, pct(s.share_new, 1), { class: 'lab' });
+    const h = el('rect', { x: 0, y: cy - rh / 2, width: W, height: rh, class: 'hit' }, svg);
+    h.addEventListener('pointermove', e => showTip(e, `<b>${name}</b>` + row(T.old.split(':')[0], nf(s.control), css('--old')) + row(T.new.split(':')[0], nf(s.new), css('--new')) + row(T.luck, s.p < 1e-6 ? T.million : pct(s.p, 0))));
+    h.addEventListener('pointerleave', hideTip);
+  });
+  $('#split-note').textContent = after ? T.splitOk : T.splitBad;
+}
+$$('[data-fix]').forEach(b => b.addEventListener('click', () => { fix = b.dataset.fix; $$('[data-fix]').forEach(o => o.setAttribute('aria-pressed', o === b)); drawAndroid(); drawSplit(); }));
+
+/* ---------- CHANNELS ---------- */
+let metric = 'conv';
+const BS = D.by_source;
+function drawCh() {
+  const svg = $('#c-ch'); clear(svg);
+  const k = metric, money = k === 'cpv';
+  const val = s => money ? s.cpv_new - s.cpv_old : s[k + '_new'] - s[k + '_old'];
+  const ticks = { conv: [-0.01, 0, 0.01, 0.02, 0.03], ret: [-0.3, -0.2, -0.1, 0, 0.1, 0.2], cpv: [-3, -2, -1, 0, 1, 2] }[k];
+  const fmt = money ? (v => sUsd(v, 0)) : (v => sPts(v, 0));
+  $('#ch-title').textContent = T['chT' + k];
+  const W = 600, ml = 130, mr = 70, mt = 10, rh = 36, H = mt + rh * BS.length + 26;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const x = lin(ticks[0], ticks[ticks.length - 1], ml, W - mr);
+  ticks.forEach(t => { el('line', { x1: x(t), x2: x(t), y1: mt, y2: H - 22, class: 'gl' }, svg); txt(svg, x(t), H - 8, fmt(t), { 'text-anchor': 'middle' }); });
+  el('line', { x1: x(0), x2: x(0), y1: mt, y2: H - 22, class: 'axis', 'stroke-width': 1.4 }, svg);
+  BS.forEach((s, i) => {
+    const cy = mt + i * rh + rh / 2, v = val(s), lo = s[k + '_lo'], hi = s[k + '_hi'];
+    const thin = s.source === 'Unknown';
+    txt(svg, ml - 12, cy + 4, T.src[s.source], { 'text-anchor': 'end', class: 'lab' });
+    el('line', { x1: x(Math.max(lo, ticks[0])), x2: x(Math.min(hi, ticks[ticks.length - 1])), y1: cy, y2: cy, stroke: css('--new'), 'stroke-width': 3, 'stroke-linecap': 'round', opacity: thin ? .3 : .45 }, svg);
+    el('circle', { cx: x(v), cy, r: 6, fill: css('--new'), stroke: css('--surface'), 'stroke-width': 2, opacity: thin ? .5 : 1 }, svg);
+    txt(svg, W - mr + 10, cy + 4, money ? sUsd(v) : sPts(v), { class: 'lab' });
+    const h = el('rect', { x: 0, y: cy - rh / 2, width: W, height: rh, class: 'hit' }, svg);
+    h.addEventListener('pointermove', e => showTip(e, `<b>${T.src[s.source]}</b>` + row(T.visitors, nf(s.visitors)) + row(T.signups, `${nf(s.signups_old)} / ${nf(s.signups_new)}`) +
+      row(T.thSign, T.cmp(pct(s.conv_old), pct(s.conv_new))) + row(T.thRet, T.cmp(pct(s.ret_old, 0), pct(s.ret_new, 0))) + row(T.thCpv, T.cmp(usd(s.cpv_old), usd(s.cpv_new))) +
+      row(T.range, money ? `${sUsd(lo)} … ${sUsd(hi)}` : `${sPts(lo)} … ${sPts(hi)}`)));
+    h.addEventListener('pointerleave', hideTip);
+  });
+}
+$('#t-ch').innerHTML = BS.map(s => `<tr><td>${T.src[s.source]}</td><td class="num">${T.cmp(pct(s.conv_old), pct(s.conv_new))}</td><td class="num">${T.cmp(pct(s.ret_old, 0), pct(s.ret_new, 0))}</td><td class="num">${T.cmp(usd(s.cpv_old), usd(s.cpv_new))}</td></tr>`).join('');
+$('#het-note').textContent = T.het;
+$$('[data-m]').forEach(b => b.addEventListener('click', () => { metric = b.dataset.m; $$('[data-m]').forEach(o => o.setAttribute('aria-pressed', o === b)); drawCh(); }));
+
+/* ---------- NEXT TEST ---------- */
+const V0 = { old: PS.control.contribution + PS.control.discount, new: PS.new_flow.contribution + PS.new_flow.discount };
+const base = PV.contribution.control;
+let stay = 'old';
+const cpvOf = (lift, disc, st) => C.control * (1 + lift) * (V0[st] - disc);
+function drawCalc() {
+  const lift = +$('#lift').value / 100, disc = +$('#disc').value;
+  $('#v-lift').textContent = '+' + nf(lift * 100) + '%';
+  $('#v-disc').textContent = usd(disc, 0);
+  const v = cpvOf(lift, disc, stay), d = v - base;
+  $('#o-cpv').textContent = usd(v);
+  $('#o-cpv-s').textContent = `${sUsd(d)} vs ${usd(base)}`;
+  const y = $('#o-year'); y.textContent = bigUsd(d * VIS); y.className = 'big ' + (d >= 0 ? 'up' : 'down');
+  const svg = $('#c-curve'); clear(svg);
+  const W = 600, H = 300, m = { l: 58, r: 20, t: 12, b: 30 };
+  const xs = Array.from({ length: 41 }, (_, i) => i / 100);
+  const vals = xs.map(l => (cpvOf(l, disc, stay) - base) * VIS);
+  const lo = Math.min(-1.5e6, ...vals), hi = Math.max(1.5e6, ...vals);
+  const yT = []; const st = hi - lo > 4e6 ? 1e6 : 5e5; for (let t = Math.floor(lo / st) * st; t < hi + st; t += st) yT.push(t);
+  const x = lin(0, 0.4, m.l, W - m.r), yy = lin(yT[0], yT[yT.length - 1], H - m.b, m.t);
+  el('rect', { x: m.l, y: yy(yT[yT.length - 1]), width: W - m.l - m.r, height: yy(0) - yy(yT[yT.length - 1]), fill: 'rgba(29,107,95,.06)' }, svg);
+  yGrid(svg, yy, yT, m.l, W - m.r, t => bigUsd(t).replace('+$0k', '$0').replace('−$0k', '$0'));
+  el('line', { x1: m.l, x2: W - m.r, y1: yy(0), y2: yy(0), stroke: css('--old'), 'stroke-width': 2, 'stroke-dasharray': '6 4' }, svg);
+  txt(svg, W - m.r - 4, yy(0) - 6, T.old.split(':')[0], { 'text-anchor': 'end', class: 'lab' });
+  [0, .1, .2, .3, .4].forEach(t => txt(svg, x(t), H - m.b + 16, '+' + nf(t * 100) + '%', { 'text-anchor': 'middle' }));
+  el('path', { d: xs.map((l, i) => `${i ? 'L' : 'M'}${x(l)},${yy(vals[i])}`).join(''), fill: 'none', stroke: css('--kelp'), 'stroke-width': 2 }, svg);
+  // tested point
+  const tv = (PV.contribution.new - base) * VIS;
+  el('circle', { cx: x(C.lift), cy: yy(tv), r: 5, fill: css('--new'), stroke: css('--surface'), 'stroke-width': 2 }, svg);
+  txt(svg, x(C.lift) + 9, yy(tv) + 4, T.testedDot, { class: 'lab' });
+  el('circle', { cx: x(lift), cy: yy(d * VIS), r: 7, fill: css('--kelp'), stroke: css('--surface'), 'stroke-width': 2.5 }, svg);
+  const cross = el('line', { y1: m.t, y2: H - m.b, stroke: css('--axis'), 'stroke-dasharray': '3 3', opacity: 0 }, svg);
+  const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, class: 'hit' }, svg);
+  hit.addEventListener('pointermove', e => {
+    const p = svgPt(svg, e); const i = Math.max(0, Math.min(40, Math.round((p.x - m.l) / (x(.01) - x(0)))));
+    cross.setAttribute('x1', x(xs[i])); cross.setAttribute('x2', x(xs[i])); cross.setAttribute('opacity', 1);
+    showTip(e, `<b>${T.lLift}: +${i}%</b>` + row(T.oCpv, usd(cpvOf(xs[i], disc, stay))) + row(T.oYear, bigUsd(vals[i])));
+  });
+  hit.addEventListener('pointerleave', () => { hideTip(); cross.setAttribute('opacity', 0); });
+}
+['#lift', '#disc'].forEach(s => $(s).addEventListener('input', drawCalc));
+function setStay(s) { stay = s; $$('[data-stay]').forEach(o => o.setAttribute('aria-pressed', o.dataset.stay === s)); }
+$$('[data-stay]').forEach(b => b.addEventListener('click', () => { setStay(b.dataset.stay); drawCalc(); }));
+const presets = { tested: [Math.round(C.lift * 100), Math.round(PS.new_flow.discount), 'new'], a: [10, 20, 'old'], none: [0, 0, 'old'] };
+$$('[data-p]').forEach(b => b.addEventListener('click', () => { const [l, d, s] = presets[b.dataset.p]; $('#lift').value = l; $('#disc').value = d; setStay(s); drawCalc(); }));
+
+/* ---------- tabs ---------- */
+const draws = { result: () => { drawCum(); drawSurv(); }, fair: () => { drawAndroid(); drawSplit(); }, channels: drawCh, next: drawCalc };
+function show(id) {
+  $$('[role=tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
+  ['result', 'fair', 'channels', 'next'].forEach(s => $('#' + s).hidden = s !== id);
+  draws[id]();
+}
+$$('[role=tab]').forEach(b => b.addEventListener('click', () => show(b.dataset.tab)));
+const start = new URLSearchParams(location.search).get('tab');
+show(draws[start] ? start : 'result');
+</script>
+</body>
+</html>

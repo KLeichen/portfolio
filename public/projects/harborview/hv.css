@@ -1,0 +1,61 @@
+/* Harborview: dispatch-board look. Paper, ink, blueprint rules, one safety orange for emergencies. */
+:root {
+  --paper: #f3f0e8; --paper-2: #ebe6da; --card: #fbfaf6; --ink: #1c2733; --ink-2: #44515f; --muted: #6f7b88;
+  --rule: #d6d0c2; --grid: #e3ddd0; --blue: #24527a;
+  --em: #e0512a; --em-soft: #fbe3da; --ok: #2e7d5b; --warn: #b7791f;
+  --plumbing: #2f6fb0; --electrical: #c99700; --hvac: #8657bd; --appliance: #23907f; --pest: #6a8b23; --doors_windows: #a65a2e; --general: #7c8493;
+  --radius: 10px; --shadow: 0 1px 0 rgba(28,39,51,.06), 0 6px 18px -10px rgba(28,39,51,.25);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --cond: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--blue); }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.em { color: var(--em); }
+.tag { display: inline-flex; align-items: center; gap: 5px; font: 600 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.solid { background: var(--em); color: #fff; border-color: var(--em); }
+.tag.dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 500;
+  background: var(--card); border: 1px solid var(--rule); white-space: nowrap; }
+.chip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--card); }
+.seg button { border: 0; background: none; padding: 6px 11px; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+  padding: 9px 14px; border-radius: 8px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* ticket slip: perforated left edge */
+.slip { position: relative; background: var(--card); border: 1px solid var(--rule); border-radius: 8px; }
+.slip::before { content: ""; position: absolute; left: 10px; top: 8px; bottom: 8px; border-left: 2px dotted var(--rule); }
+
+/* trade colour helpers */
+.t-plumbing { --c: var(--plumbing); } .t-electrical { --c: var(--electrical); } .t-hvac { --c: var(--hvac); } .t-appliance { --c: var(--appliance); }
+.t-pest { --c: var(--pest); } .t-doors_windows { --c: var(--doors_windows); } .t-general { --c: var(--general); }
+.tc { color: var(--c); }
+.tb { background: var(--c); }
+
+/* highlighted text (word contributions) */
+.hl-text { font-family: var(--mono); font-size: 14px; line-height: 1.9; word-break: break-word; }
+.hl-text .w { border-radius: 3px; padding: 1px 1px; }
+.hl-text .w.e { box-shadow: inset 0 -2px 0 var(--em); }
+
+/* tooltip */
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--paper); padding: 8px 10px; border-radius: 7px;
+  font-size: 12.5px; line-height: 1.45; max-width: 300px; box-shadow: 0 8px 24px -8px rgba(0,0,0,.45); opacity: 0; transition: opacity .1s; }
+.tip.on { opacity: 1; }
+.tip b { color: #fff; } .tip .k { color: #b9c3cc; }
+svg text { font-family: var(--sans); }
+svg text:not([fill]) { fill: var(--ink-2); }
+svg .ax { stroke: var(--rule); }
+svg .gl { stroke: var(--grid); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }

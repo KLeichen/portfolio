@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harborview triage desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hv.css">
+<style>
+  body { background: var(--paper); }
+  .desk { max-width: 1180px; margin: 0 auto; padding: 14px 16px 18px; }
+  header > div:first-child { flex: 1 1 420px; min-width: 0; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 10px; }
+  .brand { font: 700 12px/1 var(--mono); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  h1 { font: 700 23px/1.15 var(--cond); margin: 4px 0 0; letter-spacing: -.01em; }
+  .sub { color: var(--ink-2); font-size: 13px; margin-top: 3px; }
+  .compose { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 12px 0; align-items: start; }
+  .compose textarea { width: 100%; resize: vertical; min-height: 46px; max-height: 120px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px;
+    background: var(--card); font: 14px/1.5 var(--mono); }
+  .compose .side { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .compose .side label { font-size: 12px; color: var(--muted); }
+  .examples { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .examples button { border: 1px dashed var(--rule); background: transparent; border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--ink-2); }
+  .examples button:hover { border-color: var(--ink); color: var(--ink); }
+  .grid { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 14px; }
+  .queue { display: flex; flex-direction: column; min-height: 0; }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .filters button { border: 1px solid var(--rule); background: var(--card); border-radius: 7px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .filters b { font-family: var(--mono); font-weight: 600; margin-left: 4px; }
+  .list { overflow-y: auto; height: 540px; padding-right: 4px; display: flex; flex-direction: column; gap: 7px; }
+  .item { text-align: left; padding: 8px 10px 8px 22px; cursor: pointer; border: 1px solid var(--rule); background: var(--card); border-radius: 8px; position: relative; }
+  .item::before { content: ""; position: absolute; left: 9px; top: 7px; bottom: 7px; border-left: 2px dotted var(--rule); }
+  .item.sel { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .item.isem { background: linear-gradient(90deg, var(--em-soft), var(--card) 40%); }
+  .item .top { display: flex; justify-content: space-between; gap: 8px; font: 500 11px/1.2 var(--mono); color: var(--muted); }
+  .item .t { font: 13px/1.4 var(--mono); margin: 4px 0 5px; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .item .badges { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .mini { font: 600 10.5px/1 var(--mono); padding: 3px 6px; border-radius: 4px; letter-spacing: .03em; text-transform: uppercase; }
+  .mini.trade { color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+  .mini.em { background: var(--em); color: #fff; }
+  .mini.miss { color: var(--em); border: 1px solid var(--em); }
+  .mini.rev { color: var(--warn); border: 1px solid var(--warn); }
+  .detail { padding: 16px 18px 16px 30px; min-width: 0; }
+  .dh { display: flex; flex-wrap: wrap; gap: 8px 14px; font: 500 12px/1.3 var(--mono); color: var(--muted); }
+  .dh b { color: var(--ink); font-weight: 600; }
+  .quote { margin: 12px 0 14px; padding: 12px 14px; background: var(--paper); border-radius: 8px; border: 1px solid var(--grid); }
+  .verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .box { border: 1px solid var(--rule); border-radius: 9px; padding: 12px; background: #fff; }
+  .box h3 { margin: 0 0 8px; font: 600 11.5px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .big { font: 700 22px/1.1 var(--cond); }
+  .conf { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
+  .bars { margin-top: 10px; display: grid; gap: 4px; }
+  .bar { display: grid; grid-template-columns: 118px 1fr 40px; gap: 8px; align-items: center; font-size: 12px; }
+  .bar .track { height: 8px; background: var(--paper-2); border-radius: 4px; overflow: hidden; }
+  .bar .fill { display: block; height: 100%; background: var(--c); border-radius: 4px; }
+  .bar .v { font: 500 11.5px var(--mono); text-align: right; color: var(--ink-2); }
+  .gauge { position: relative; height: 14px; background: linear-gradient(90deg, #e9e5da 0 15%, var(--em-soft) 15% 100%); border-radius: 7px; margin: 10px 0 4px; }
+  .gauge .needle { position: absolute; top: -4px; width: 3px; height: 22px; background: var(--ink); border-radius: 2px; transform: translateX(-1px); transition: left .25s; }
+  .gauge .th { position: absolute; top: -3px; bottom: -3px; left: 15%; border-left: 2px dashed var(--em); }
+  .gscale { display: flex; justify-content: space-between; font: 11px var(--mono); color: var(--muted); }
+  .rules { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 12.5px; }
+  .rules li { display: flex; gap: 6px; align-items: baseline; }
+  .rules code { font: 12px var(--mono); background: var(--em-soft); color: #8a2c12; padding: 1px 5px; border-radius: 4px; }
+  .compare { margin-top: 10px; font-size: 12.5px; padding: 8px 10px; border-radius: 7px; background: var(--paper); }
+  .why { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .words { display: flex; flex-wrap: wrap; gap: 5px; }
+  .words span { font: 12px var(--mono); padding: 2px 7px; border-radius: 4px; }
+  .legend { margin-top: 12px; font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 18px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+  .foot { margin-top: 10px; font-size: 11.5px; color: var(--muted); }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; } .list { height: 300px; } .verdict, .why { grid-template-columns: 1fr; }
+    .compose { grid-template-columns: 1fr; } .compose .side { flex-direction: row; align-items: center; justify-content: space-between; }
+    .detail { padding: 14px 14px 14px 26px; }
+  }
+</style>
+</head>
+<body>
+<div class="desk">
+  <header>
+    <div>
+      <div class="brand">Harborview Residential · <span data-i="brand"></span></div>
+      <h1 data-i="title"></h1>
+      <div class="sub" data-i="sub"></div>
+    </div>
+    <div class="seg" role="group" aria-label="Language"><button data-lang="es">ES</button><button data-lang="en">EN</button></div>
+  </header>
+
+  <div class="compose">
+    <div>
+      <textarea id="input" rows="2" spellcheck="false"></textarea>
+      <div class="examples" id="examples"></div>
+    </div>
+    <div class="side">
+      <button class="btn" id="run" data-i="run"></button>
+      <label><input type="checkbox" id="season" checked> <span data-i="season"></span></label>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="queue">
+      <div class="filters" id="filters"></div>
+      <div class="list" id="list" role="listbox"></div>
+    </div>
+    <div class="slip detail" id="detail"></div>
+  </div>
+  <div class="foot" data-i="foot"></div>
+</div>
+
+<script src="common.js"></script>
+<script src="triage.js"></script>
+<script>
+const S = {
+  es: {
+    brand: 'mesa de triage', title: 'Cada pedido, leído en el momento en que llega',
+    sub: 'Los 334 pedidos nuevos del 15 al 28 de octubre de 2026, clasificados por el modelo de Kevin. Corre entero en tu navegador: ningún texto sale de esta página.',
+    run: 'Clasificar', season: 'Temporada de calefacción (15 oct – 15 abr)',
+    placeholder: 'Escribí un pedido como lo haría un inquilino, en español o en inglés…',
+    f_all: 'Todos', f_em: 'Emergencias', f_miss: 'Recepción no la marcó', f_rev: 'Para revisar', f_es: 'En español',
+    yours: 'Tu pedido', trade: 'Oficio', emergency: 'Emergencia', conf: 'confianza', review: 'Poca confianza: lo revisa una persona',
+    page: 'AVISAR A GUARDIA', routine: 'Rutina', prob: 'probabilidad', threshold: 'umbral 0,15',
+    rules_hit: 'Coincide con la lista de Lena:', no_rules: 'No coincide con ninguna regla de la lista.',
+    season_clamp: 'Fuera de temporada, "sin calefacción" no es emergencia (regla de la ciudad).',
+    intake: 'Recepción lo marcó', intake_u: 'urgente', intake_n: 'normal',
+    agree_em: 'El modelo y recepción coinciden.', miss: 'Recepción lo dejó en la cola normal: esperaría hasta la mañana.', extra: 'Recepción lo marcó urgente, pero no es una emergencia de la lista.',
+    for: 'Palabras que empujan a', against: 'Palabras que restan', em_words: 'Qué sube la emergencia (reglas y palabras)',
+    lg_trade: 'pesa hacia el oficio', lg_neg: 'resta', lg_em: 'evidencia de emergencia',
+    probs: 'Las 7 probabilidades', empty: 'Sin texto', nothing: 'Ningún pedido coincide con el filtro.',
+    foot: 'Modelo: TF-IDF de palabras (1–2) y de fragmentos de 3–5 letras + regresión logística, más las reglas de emergencia de Lena. Exportado de Python con los mismos pesos; da las mismas respuestas en 1.939 de 1.939 pedidos de prueba. Escenario con datos sintéticos.',
+    ex: ['No hay calefacción, hace mucho frío', 'KIT SINK CLOGGED, TEN CALLED TWICE', 'toilet overflowed earlier, I cleaned it up and it flushes now', 'the outlet feels hot and the plug melted a bit', 'Light in the bedroom flickers URGENT', 'Carbon monoxdie detector going off'],
+  },
+  en: {
+    brand: 'triage desk', title: 'Every request, read the moment it arrives',
+    sub: 'The 334 new requests from 15 to 28 October 2026, classified by Kevin\'s model. It runs entirely in your browser: no text leaves this page.',
+    run: 'Classify', season: 'Heating season (15 Oct – 15 Apr)',
+    placeholder: 'Write a request the way a tenant would, in English or Spanish…',
+    f_all: 'All', f_em: 'Emergencies', f_miss: 'Missed by intake', f_rev: 'Needs review', f_es: 'In Spanish',
+    yours: 'Your request', trade: 'Trade', emergency: 'Emergency', conf: 'confidence', review: 'Low confidence: a person checks it',
+    page: 'PAGE ON-CALL', routine: 'Routine', prob: 'probability', threshold: 'threshold 0.15',
+    rules_hit: "Matches Lena's list:", no_rules: 'No rule on the list matches.',
+    season_clamp: 'Outside heating season, "no heat" is not an emergency (city rule).',
+    intake: 'Intake marked it', intake_u: 'urgent', intake_n: 'normal',
+    agree_em: 'Model and intake agree.', miss: 'Intake left it in the normal queue: it would have waited until morning.', extra: 'Intake marked it urgent, but it is not an emergency on the list.',
+    for: 'Words pushing towards', against: 'Words pulling away', em_words: 'What raises the emergency score (rules and words)',
+    lg_trade: 'pushes towards the trade', lg_neg: 'pulls away', lg_em: 'emergency evidence',
+    probs: 'All 7 probabilities', empty: 'No text', nothing: 'No request matches this filter.',
+    foot: 'Model: TF-IDF of words (1–2) and 3–5 letter pieces + logistic regression, plus Lena\'s emergency rules. Exported from Python with the same weights; it gives the same answers on 1,939 of 1,939 test requests. Scenario with synthetic data.',
+    ex: ['No hay calefacción, hace mucho frío', 'KIT SINK CLOGGED, TEN CALLED TWICE', 'toilet overflowed earlier, I cleaned it up and it flushes now', 'the outlet feels hot and the plug melted a bit', 'Light in the bedroom flickers URGENT', 'Carbon monoxdie detector going off'],
+  },
+};
+const L = () => S[HV.lang];
+let E, NEW = [], filter = 'all', sel = null, custom = null;
+const SPANISH = /[áéíóúñ¿]|\b(hay|el|la|no funciona|gracias|hola|buenos|buenas|ver foto|est[aá]|agua|puerta|llave|cocina)\b/i;
+
+function verdict(text, season = true) { return E.classify(text || '', { season }); }
+
+function renderStatic() {
+  document.querySelectorAll('[data-i]').forEach((n) => (n.textContent = L()[n.dataset.i]));
+  document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.lang === HV.lang));
+  document.getElementById('input').placeholder = L().placeholder;
+  const ex = document.getElementById('examples'); ex.innerHTML = '';
+  L().ex.forEach((s) => { const b = document.createElement('button'); b.textContent = s; b.onclick = () => { input.value = s; runCustom(); }; ex.appendChild(b); });
+}
+
+function counts() {
+  return { all: NEW.length, em: NEW.filter((n) => n.v.emergency).length, miss: NEW.filter((n) => n.v.emergency && n.intake === 'normal').length,
+    rev: NEW.filter((n) => n.v.needsReview).length, es: NEW.filter((n) => SPANISH.test(n.text)).length };
+}
+function renderFilters() {
+  const c = counts(), f = document.getElementById('filters'); f.innerHTML = '';
+  [['all', 'f_all'], ['em', 'f_em'], ['miss', 'f_miss'], ['rev', 'f_rev'], ['es', 'f_es']].forEach(([k, s]) => {
+    const b = document.createElement('button'); b.innerHTML = `${L()[s]}<b>${c[k]}</b>`; b.setAttribute('aria-pressed', filter === k);
+    b.onclick = () => { filter = k; renderFilters(); renderList(); }; f.appendChild(b);
+  });
+}
+function shown() {
+  return NEW.filter((n) => filter === 'all' || (filter === 'em' && n.v.emergency) || (filter === 'miss' && n.v.emergency && n.intake === 'normal')
+    || (filter === 'rev' && n.v.needsReview) || (filter === 'es' && SPANISH.test(n.text)));
+}
+function renderList() {
+  const list = document.getElementById('list'); list.innerHTML = '';
+  const items = shown();
+  if (!items.length) list.innerHTML = `<p class="muted">${L().nothing}</p>`;
+  items.forEach((n) => {
+    const b = document.createElement('button'); b.className = 'item' + (n.v.emergency ? ' isem' : '') + (sel === n && !custom ? ' sel' : '');
+    b.setAttribute('role', 'option');
+    b.innerHTML = `<div class="top"><span>${n.id} · ${HV.channel(n.ch)}</span><span>${n.ts.slice(5).replace('-', '/')}</span></div>
+      <div class="t">${HV.esc(n.text || '(' + L().empty + ')')}</div>
+      <div class="badges"><span class="mini trade t-${n.v.trade}">${HV.trade(n.v.trade)}</span>${n.v.emergency ? `<span class="mini em">${L().emergency}</span>` : ''}${n.v.emergency && n.intake === 'normal' ? `<span class="mini miss">${L().f_miss}</span>` : ''}${n.v.needsReview ? `<span class="mini rev">${L().f_rev}</span>` : ''}</div>`;
+    b.onclick = () => { sel = n; custom = null; renderList(); renderDetail(); if (innerWidth < 760) document.getElementById('detail').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    list.appendChild(b);
+  });
+}
+
+function topWords(credits, sign, k = 6) {
+  return credits.filter((t) => (sign > 0 ? t.v > 0.02 : t.v < -0.02)).sort((a, b) => sign * (b.v - a.v)).filter((t, i, a) => a.findIndex((x) => x.w === t.w) === i).slice(0, k);
+}
+
+function renderDetail() {
+  const d = document.getElementById('detail');
+  const n = custom || sel; if (!n) return;
+  const season = custom ? document.getElementById('season').checked : true;
+  const v = custom ? verdict(n.text, season) : n.v;
+  const text = n.text || '';
+  const tc = HV.wordCredits(text, v.wordContrib(v.trade)), ec = HV.wordCredits(text, v.emergencyContrib());
+  const ruleWords = new Set(v.rules.flatMap((h) => h.match.split(/[^a-z0-9]+/).filter((w) => w.length > 1)));
+  const norm = (w) => E.normalise(w);
+  ec.forEach((t) => { const w = norm(t.w); if ([...ruleWords].some((r) => w === r || (r.length >= 3 && w.startsWith(r)))) t.v = Math.max(t.v, 1); });
+  const head = custom ? `<b>${L().yours}</b>` : `<span><b>${n.id}</b></span><span>${HV.channel(n.ch)}</span><span>${n.b || '—'} ${n.u ? '· ' + n.u : ''}</span><span>${n.ts}</span>${n.cat ? `<span>dropdown: ${HV.esc(n.cat)}</span>` : ''}`;
+  let cmp = '';
+  if (!custom) {
+    if (v.emergency && n.intake === 'normal') cmp = `<div class="compare em"><b>${L().intake}: ${L().intake_n}.</b> ${L().miss}</div>`;
+    else if (!v.emergency && n.intake === 'urgent') cmp = `<div class="compare"><b>${L().intake}: ${L().intake_u}.</b> ${L().extra}</div>`;
+    else cmp = `<div class="compare"><b>${L().intake}: ${n.intake === 'urgent' ? L().intake_u : L().intake_n}.</b> ${L().agree_em}</div>`;
+  }
+  const probs = HV.TRADES.map((t) => [t, v.probs[t]]).sort((a, b) => b[1] - a[1]);
+  const pos = topWords(tc, 1), neg = topWords(tc, -1, 4), emw = topWords(ec.filter((t) => t.v < 1), 1, 5);
+  d.innerHTML = `<div class="dh">${head}</div>
+    <div class="quote hl-text">${text ? HV.highlight(text, tc, ec, v.trade) : `<span class="muted">(${L().empty})</span>`}</div>
+    <div class="verdict">
+      <div class="box t-${v.trade}"><h3>${L().trade}</h3>
+        <div class="big tc">${HV.trade(v.trade)}</div>
+        <div class="conf">${HV.pct(v.confidence)} ${L().conf}${v.needsReview ? ` · <span style="color:var(--warn);font-weight:600">${L().review}</span>` : ''}</div>
+        <div class="bars">${probs.map(([t, p]) => `<div class="bar t-${t}"><span>${HV.trade(t)}</span><span class="track"><span class="fill" style="width:${(p * 100).toFixed(1)}%"></span></span><span class="v">${HV.pct(p)}</span></div>`).join('')}</div>
+      </div>
+      <div class="box"><h3>${L().emergency}</h3>
+        <div class="big" style="color:${v.emergency ? 'var(--em)' : 'var(--ink-2)'}">${v.emergency ? '⚠ ' + L().page : L().routine}</div>
+        <div class="conf">${L().prob} ${HV.nf(v.pEmergency, 2)} · ${L().threshold}</div>
+        <div class="gauge"><span class="th"></span><span class="needle" style="left:${(v.pEmergency * 100).toFixed(1)}%"></span></div>
+        <div class="gscale"><span>0</span><span>0,5</span><span>1</span></div>
+        ${v.rules.length ? `<p style="margin:10px 0 0;font-size:12.5px"><b>${L().rules_hit}</b></p><ul class="rules">${v.rules.map((h) => `<li>• ${HV.rule(h.cat)} <code>${HV.esc(h.match)}</code></li>`).join('')}</ul>` : `<p class="muted" style="margin:10px 0 0;font-size:12.5px">${L().no_rules}</p>`}
+        ${v.seasonClamp ? `<p style="margin:8px 0 0;font-size:12.5px;color:var(--warn)">${L().season_clamp}</p>` : ''}
+        ${cmp}
+      </div>
+    </div>
+    <div class="why">
+      <div><h3 class="muted" style="font:600 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px">${L().for} ${HV.trade(v.trade)}</h3>
+        <div class="words t-${v.trade}">${pos.map((t) => `<span style="background:color-mix(in srgb,var(--c) 16%,transparent)">${HV.esc(t.w)} <b>+${t.v.toFixed(2)}</b></span>`).join('') || '—'}
+        ${neg.map((t) => `<span style="background:var(--paper-2)">${HV.esc(t.w)} ${t.v.toFixed(2)}</span>`).join('')}</div></div>
+      <div><h3 class="muted" style="font:600 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px">${L().em_words}</h3>
+        <div class="words">${(v.rules.map((h) => `<span style="background:var(--em);color:#fff">${HV.esc(HV.rule(h.cat))} <b>+${(E.M.emergency.rule_coef[E.M.emergency.cats.indexOf(h.cat)] * 3).toFixed(1)}</b></span>`).join('') + emw.map((t) => `<span style="background:var(--em-soft);color:#8a2c12">${HV.esc(t.w)} <b>+${t.v.toFixed(2)}</b></span>`).join('')) || '—'}</div></div>
+    </div>
+    <div class="legend"><span><i style="background:color-mix(in srgb,var(--${v.trade}) 40%,transparent)"></i>${L().lg_trade}</span><span><i style="background:#dfe2e6"></i>${L().lg_neg}</span><span><i style="box-shadow:inset 0 -3px 0 var(--em)"></i>${L().lg_em}</span></div>`;
+  d.querySelectorAll('.w').forEach((s) => HV.bindTip(s, () => `<b>${HV.esc(s.textContent)}</b><br><span class="k">${HV.trade(v.trade)}:</span> ${(+s.dataset.v >= 0 ? '+' : '') + (+s.dataset.v).toFixed(3)}<br><span class="k">${L().emergency}:</span> ${(+s.dataset.e >= 0 ? '+' : '') + (+s.dataset.e).toFixed(3)}`));
+}
+
+function runCustom() {
+  const t = document.getElementById('input').value.trim(); if (!t) return;
+  custom = { text: t }; renderList(); renderDetail();
+}
+
+function setLang(l) { HV.setLang(l); renderStatic(); renderFilters(); renderList(); renderDetail(); }
+
+(async function init() {
+  const [M, C] = await Promise.all([fetch('model.json').then((r) => r.json()), fetch('case.json').then((r) => r.json())]);
+  E = HarborviewTriage.Engine(M);
+  NEW = C.new.map((n) => ({ ...n, v: verdict(n.text, true) }))
+    .sort((a, b) => (b.v.emergency && b.intake === 'normal') - (a.v.emergency && a.intake === 'normal') || b.v.emergency - a.v.emergency || (a.ts < b.ts ? 1 : -1));
+  sel = NEW[0];
+  document.querySelectorAll('[data-lang]').forEach((b) => (b.onclick = () => setLang(b.dataset.lang)));
+  document.getElementById('run').onclick = runCustom;
+  document.getElementById('input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runCustom(); } });
+  let tmr; document.getElementById('input').addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(runCustom, 250); });
+  document.getElementById('season').onchange = () => custom && renderDetail();
+  setLang(HV.lang);
+})();
+</script>
+</body>
+</html>

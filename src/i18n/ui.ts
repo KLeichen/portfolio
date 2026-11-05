@@ -57,6 +57,9 @@ export const ui = {
     'project.report': 'Informe completo',
     'project.tool': 'Probá la herramienta',
     'project.simulated': 'Escenario con datos sintéticos.',
+    'project.case.title': 'El caso completo, paso a paso',
+    'project.case.desc': 'Cada decisión explicada con gráficos interactivos y ejemplos que podés cambiar: limpieza, modelo, evaluación y resultados.',
+    'project.case.cta': 'Ver el caso completo →',
     'footer': 'Hecho con Astro.',
   },
   en: {
@@ -107,6 +110,9 @@ export const ui = {
     'project.report': 'Full report',
     'project.tool': 'Try the tool',
     'project.simulated': 'Scenario with synthetic data.',
+    'project.case.title': 'The full case study, step by step',
+    'project.case.desc': 'Every decision explained with interactive charts and examples you can change: clean-up, model, evaluation and results.',
+    'project.case.cta': 'Read the full case study →',
     'footer': 'Built with Astro.',
   },
 } as const;

@@ -28,12 +28,19 @@ const { Content } = await render(entry);
     </div>
   </div>
 
+  {p.caseStudy && (
+    <a class="card case" href={p.caseStudy}>
+      <span><strong>{t(lang, 'project.case.title')}</strong><span>{t(lang, 'project.case.desc')}</span></span>
+      <span class="btn btn-primary">{t(lang, 'project.case.cta')}</span>
+    </a>
+  )}
+
   <div class="content"><Content /></div>
 
   {p.embed && (
     <div class="embed">
       <h2>{t(lang, 'project.tool')}</h2>
-      <iframe src={p.embed} title={p.title} loading="lazy"></iframe>
+      <iframe src={p.embed} title={p.title} loading="lazy" style={p.embedHeight ? `height:${p.embedHeight}px` : undefined}></iframe>
     </div>
   )}
 
@@ -60,5 +67,10 @@ const { Content } = await render(entry);
   .content :global(strong) { color: var(--text); }
   .embed h2 { font-size: 1.5rem; margin: 48px 0 16px; }
   .embed iframe { width: 100%; height: 820px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+  .case { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px 24px; margin-top: 32px; border-color: var(--accent); }
+  .case:hover { transform: translateY(-2px); }
+  .case > span:first-child { display: flex; flex-direction: column; gap: 4px; max-width: 34em; }
+  .case strong { font-size: 1.2rem; color: var(--text); }
+  .case span span { color: var(--muted); }
   .note { margin-top: 48px; color: var(--muted); font-size: .9rem; font-style: italic; }
 </style>

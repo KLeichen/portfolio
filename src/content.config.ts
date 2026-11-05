@@ -14,6 +14,8 @@ const projects = defineCollection({
     github: z.string().optional(),
     report: z.string().optional(),
     embed: z.string().optional(),
+    embedHeight: z.number().optional(), // px; default 820
+    caseStudy: z.string().optional(), // long, detailed version of the project (standalone page)
     simulated: z.boolean().default(false),
     highlights: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
   }),

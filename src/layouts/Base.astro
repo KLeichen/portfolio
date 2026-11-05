@@ -28,7 +28,7 @@ const links = [
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <meta name="theme-color" content="#0e151b" />
     <script is:inline>document.documentElement.classList.add('js');</script>
   </head>
@@ -36,7 +36,7 @@ const links = [
     <div class="progress" aria-hidden="true"></div>
     <header class="nav">
       <div class="container nav-inner">
-        <a href={home} class="brand"><span class="mark" aria-hidden="true">KL</span><span>Kevin Leichen</span></a>
+        <a href={home} class="brand"><span class="mark" aria-hidden="true">&gt;_</span><span>kevin_leichen<span class="ext">.ipynb</span></span></a>
         <nav class="links" aria-label="Main">
           {links.map(([key, hash]) => <a href={home + hash} data-section={hash.slice(1)}>{t(lang, key)}</a>)}
         </nav>
@@ -50,7 +50,7 @@ const links = [
     <footer class="footer">
       <div class="container foot-inner">
         <span>© {new Date().getFullYear()} Kevin Leichen</span>
-        <span class="foot-mono">Buenos Aires, Argentina · {t(lang, 'footer')}</span>
+        <span class="foot-mono">Buenos Aires · {lang === 'es' ? 'último build' : 'last build'} {new Date().toISOString().slice(0, 10)} · {t(lang, 'footer')}</span>
       </div>
     </footer>
     <script>
@@ -89,14 +89,15 @@ const links = [
   }
   .nav.scrolled { border-bottom-color: var(--border-soft); background: rgba(14, 21, 27, 0.85); }
   .nav-inner { display: flex; align-items: center; gap: 32px; height: 64px; }
-  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-family: var(--mono); font-size: .92rem; }
+  .ext { color: var(--faint); }
   .mark {
     font-family: var(--mono); font-size: .75rem; width: 30px; height: 30px; display: grid; place-items: center;
     border-radius: 8px; border: 1px solid var(--accent); color: var(--accent);
   }
   .links { display: flex; gap: 6px; margin-left: auto; }
   .links a {
-    color: var(--muted); font-weight: 500; font-size: .93rem; padding: 6px 12px; border-radius: 999px;
+    color: var(--muted); font-weight: 500; font-size: .82rem; font-family: var(--mono); padding: 6px 12px; border-radius: 999px;
     transition: color .2s, background .2s;
   }
   .links a:hover { color: var(--text); }

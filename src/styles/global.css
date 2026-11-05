@@ -6,15 +6,18 @@
   --border: #243442;
   --border-soft: #1d2b37;
   --text: #e6edf2;
-  --muted: #93a5b5;
-  --faint: #5f7385;
+  --muted: #a6b5c3;
+  --faint: #8597a8;
   --accent: #4fd1c5;
   --accent-soft: rgba(79, 209, 197, 0.12);
   --accent-ink: #0b2826;
-  --radius: 16px;
-  --max: 1180px;
-  --sans: 'Inter', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --radius: 12px;
+  --r: 12px;
+  --r-sm: 8px;
+  --max: 1308px;
+  --sans: 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+  --m-in: 140ms; --m-out: 200ms; --m-press: 90ms;
   --ease: cubic-bezier(.2, .7, .2, 1);
   color-scheme: dark;
 }
@@ -38,12 +41,14 @@ body {
 ::selection { background: var(--accent); color: var(--accent-ink); }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
-h1, h2, h3 { line-height: 1.1; margin: 0; letter-spacing: -0.025em; font-weight: 700; }
-h1 { font-weight: 800; letter-spacing: -0.04em; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { line-height: 1.1; margin: 0; letter-spacing: -0.03em; font-weight: 500; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); animation: focus-in .2s var(--ease); }
+@keyframes focus-in { from { outline-offset: 6px; } }
 
 .container { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
-section { padding: 112px 0; scroll-margin-top: 64px; position: relative; }
+section { padding: 72px 0; scroll-margin-top: 64px; position: relative; }
+/* The hero fills the first screen on its own */
+@media (min-width: 820px) and (min-height: 600px) { main > section.hero { min-height: calc(100svh - 64px); display: flex; align-items: center; } main > section.hero > .container { width: 100%; } }
 section.alt { background: rgba(18, 27, 35, .82); border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
 
 /* Section eyebrow (used by project pages) */
@@ -58,20 +63,23 @@ section.alt { background: rgba(18, 27, 35, .82); border-top: 1px solid var(--bor
 
 .btn {
   display: inline-flex; align-items: center; gap: 10px;
-  padding: 13px 22px; border-radius: 999px; font-weight: 600; font-size: .98rem;
-  border: 1px solid var(--accent); transition: transform .2s var(--ease), background .2s, color .2s, box-shadow .2s;
-  cursor: pointer; font-family: inherit;
+  padding: 12px 20px; border-radius: var(--r-sm); font-weight: 500; font-size: .96rem;
+  border: 1px solid var(--accent); cursor: pointer; font-family: inherit;
+  transition: transform var(--m-out) var(--ease), background-color var(--m-out), border-color var(--m-out), color var(--m-out);
 }
-.btn:hover { transform: translateY(-2px); }
-.btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 8px 30px -12px rgba(79, 209, 197, .7); }
-.btn-primary:hover { box-shadow: 0 12px 34px -10px rgba(79, 209, 197, .85); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn svg { transition: transform .2s var(--ease); }
-.btn:hover svg { transform: translateX(3px); }
+.btn svg { transition: transform var(--m-out) var(--ease); }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { transform: translateY(-1px); transition-duration: var(--m-in); }
+  .btn-primary:hover { background: color-mix(in srgb, var(--accent) 86%, var(--text)); }
+  .btn-ghost:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .btn:hover svg { transform: translateX(3px); transition-duration: var(--m-in); }
+}
+.btn:active { transform: translateY(1px) scale(.985); transition-duration: var(--m-press); }
 
 .card {
-  background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--r);
 }
 .icon-box {
   width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center;
@@ -84,13 +92,7 @@ section.alt { background: rgba(18, 27, 35, .82); border-top: 1px solid var(--bor
 .muted { color: var(--muted); }
 .mono { font-family: var(--mono); }
 
-/* Scroll reveal: only hidden when JS is running, and never with reduced motion */
-.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .8s var(--ease), transform .8s var(--ease); transition-delay: var(--d, 0ms); }
-.js .reveal.in { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .js .reveal { opacity: 1; transform: none; transition: none; }
-}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::after { animation: none !important; } }
 
 @media (max-width: 720px) {
   section { padding: 72px 0; }
